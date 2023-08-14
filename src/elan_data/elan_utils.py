@@ -2,19 +2,21 @@
 from __future__ import annotations
 from elan_data.elan_data import ELAN_Data
 from pathlib import Path
-from typing import Callable, Iterator, TYPE_CHECKING, Union
+from typing import Callable, Iterator, Optional, Union
 
 import contextlib
 import matplotlib.figure
 import matplotlib.axes
+import sys
+import typing
 import wave
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-try:
+if sys.version_info >= (3, 8):
     from typing import Literal
-except ImportError:
+else:
     from typing_extensions import Literal
 
 MODE = Literal["rb", "wb"]
@@ -77,7 +79,7 @@ def eaf_to_rttm(
 
 
 def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path], filter: list = [], 
-                encoding: str = "UTF-8", formatter: Union[Callable[..., str], None] = None):
+                encoding: str = "UTF-8", formatter: Optional[Callable[..., str]] = None):
     """
     Takes the text of an `.eaf` file and outputs it to a text file.
 
@@ -106,7 +108,7 @@ def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path], filter:
     def default(row) -> str:
         return f"{row.TIER_ID} {row.START}-{row.STOP}: {row.TEXT.strip()}"
 
-    formatter = default if formatter is None else formatter
+    formatter = default if not formatter else formatter
 
     # Create the Elan_Data object from the file
     if isinstance(src, (str, Path)):
@@ -123,7 +125,7 @@ def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path], filter:
 
 
 @contextlib.contextmanager
-def audio_loader(eaf: ELAN_Data = None, mode: MODE = "rb", ret_type: RETURN = "wave") -> Iterator[Union[wave.Wave_read, wave.Wave_write, tuple[np.ndarray, int]]]:
+def audio_loader(eaf: ELAN_Data, mode: MODE = "rb", ret_type: RETURN = "wave") -> Iterator[Union[wave.Wave_read, wave.Wave_write, tuple[np.ndarray, int]]]:
     """
     Context manageable function that loads in the audio associated with the `.eaf` file. File must be in directory stated in XML. Closes file upon end.
 
@@ -153,23 +155,27 @@ def audio_loader(eaf: ELAN_Data = None, mode: MODE = "rb", ret_type: RETURN = "w
     - `TypeError`: If `ret_type` is not `"wave"` or `"ndarray"`.
     """
 
-    if eaf is None:
+    if not eaf:
         raise ValueError("No ELAN_Data object provided")
 
     if ret_type not in ("wave", "ndarray"):
         raise TypeError(f"{ret_type} not an option")
 
     try:
-        if eaf.audio is None:
+        if not eaf.audio:
             raise ValueError("ELAN_Data object has no associated audio file")
 
         audio = wave.open(str(eaf.audio.absolute()), mode)
 
-        if ret_type == "ndarray":
+        if ret_type == "ndarray" and mode == "rb":
+            audio = typing.cast(wave.Wave_read, audio)
             samp_width = audio.getsampwidth()
             dtype = np.int16
 
             yield (np.frombuffer(audio.readframes(-1), dtype=dtype), samp_width)
+
+        elif ret_type == "ndarray" and mode == "wb":
+            raise ValueError("mode should be rb for the ret_type ndarray")
 
         else:
             yield audio
@@ -178,7 +184,7 @@ def audio_loader(eaf: ELAN_Data = None, mode: MODE = "rb", ret_type: RETURN = "w
         audio.close()
 
 
-def sound_wave(eaf: ELAN_Data = None, start: float = 0, stop: float = -1, **kwargs) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
+def sound_wave(eaf: ELAN_Data, start: float = 0, stop: float = -1, **kwargs) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """
     Plots the audio's amplitude for each channel.
 
@@ -214,10 +220,10 @@ def sound_wave(eaf: ELAN_Data = None, start: float = 0, stop: float = -1, **kwar
     """
 
     # Error handling
-    if eaf is None:
+    if not eaf:
         raise ValueError("No ELAN_Data object provided")
 
-    if eaf.audio is None:
+    if not eaf.audio:
         raise ValueError("ELAN_Data has no associated audio file")
 
     if start >= stop and stop != -1:

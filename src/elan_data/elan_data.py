@@ -2,7 +2,7 @@
 # Created by Alejandro Ciuba, alc307@pitt.edu
 from __future__ import annotations
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Sequence, Union
+from typing import Any, Iterable, Iterator, Optional, Sequence, Union
 
 import copy
 import pickle
@@ -56,7 +56,7 @@ class ELAN_Data:
 
 # ===================== INITIALIZATION METHODS =====================    
 
-    def __init__(self, file: Union[str, Path, None] = None, init_df: bool = False):
+    def __init__(self, file: Union[str, Path], init_df: bool = False):
         '''
         Default constructor for an ELAN_Data object.
 
@@ -92,7 +92,7 @@ class ELAN_Data:
         self.__tier_names: list[str] = [element.attrib['TIER_ID'] for element in self.tree.findall(".//TIER")]
 
         # Audio file path 
-        self.audio: Union[Path, None] = None
+        self.audio: Optional[Path] = None
 
         # Separate the dataframe init process
         self.tier_data: pd.DataFrame = pd.DataFrame()
@@ -102,7 +102,7 @@ class ELAN_Data:
             self.tier_data = self.init_dataframe()
 
     @classmethod
-    def from_file(cls, file: Union[str, Path, None], init_df: bool = False) -> ELAN_Data:
+    def from_file(cls, file: Union[str, Path], init_df: bool = False) -> ELAN_Data:
         '''
         Initialize an ELAN_Data object from an existing `.eaf` file, storing all its information.
 
@@ -151,7 +151,7 @@ class ELAN_Data:
         return ed_obj
     
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path, None], audio: str, init_df: bool = False) -> ELAN_Data:
+    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path], audio: str, init_df: bool = False) -> ELAN_Data:
         '''
         Initialize an ELAN_Data object based on a dataframe structured like a tiers dataframe (`ELAN_Data.tiers_data`).
 
@@ -195,8 +195,8 @@ class ELAN_Data:
         return ed_obj
     
     @classmethod
-    def create_eaf(cls, file: Union[str, Path, None] = None, audio: Union[str, Path, None] = None, 
-                   tiers: Union[list[str], None] = None, remove_default: bool = False) -> ELAN_Data:
+    def create_eaf(cls, file: Union[str, Path], audio: Optional[Union[str, Path]], 
+                   tiers: list[str], remove_default: bool = False) -> ELAN_Data:
         '''
         Creates an ELAN_Data object to work with via Python.
 
@@ -434,7 +434,7 @@ class ELAN_Data:
 
 # ===================== MUTATORS =====================
 
-    def add_tier(self, tier: Union[str, None] = None, init_df: bool = True, **kwargs):
+    def add_tier(self, tier: Optional[str], init_df: bool = True, **kwargs):
         '''
         Add a single tier at the bottom of the tier list.
 
@@ -473,7 +473,7 @@ class ELAN_Data:
         self.__modified = True
         self.df_status = init_df
 
-    def add_tiers(self, tiers: Sequence[str] = None, init_df: bool = True):
+    def add_tiers(self, tiers: Optional[Sequence[str]], init_df: bool = True):
         '''
         Add a list of tiers.
 
@@ -509,7 +509,7 @@ class ELAN_Data:
         self.__modified = True
         self.df_status = init_df
 
-    def rename_tier(self, tier: str = None, name: str = None, init_df: bool = True):
+    def rename_tier(self, tier: Optional[str], name: Optional[str] = None, init_df: bool = True):
         '''
         Rename a tier.
 
@@ -540,7 +540,7 @@ class ELAN_Data:
         self.__modified = True
         self.df_status = init_df
 
-    def remove_tiers(self, tiers: Sequence[str] = None, init_df: bool = True):
+    def remove_tiers(self, tiers: Optional[Sequence[str]], init_df: bool = True):
         '''
         Remove a list of tiers from the `ELAN_Data` instance.
 
@@ -569,7 +569,7 @@ class ELAN_Data:
         self.__modified = True
         self.df_status = init_df
 
-    def add_participant(self, tier: str = None, participant: str = None):
+    def add_participant(self, tier: Optional[str], participant: Optional[str]):
         '''
         Add participant metadata for a particular tier.
 
@@ -597,7 +597,7 @@ class ELAN_Data:
 
         self.__modified = True
 
-    def add_tier_metadata(self, tier: str = None, init_df: bool = False, **kwargs):
+    def add_tier_metadata(self, tier: Optional[str], init_df: bool = False, **kwargs):
         '''
         Add/replace any acceptable metadata for the tier.
 
@@ -648,7 +648,7 @@ class ELAN_Data:
         root.attrib["AUTHOR"] = author
         root.attrib["DATE"] = date
 
-    def add_audio(self, audio: Union[str, Path, None] = None, place_holder: bool = False):
+    def add_audio(self, audio: Optional[Union[str, Path]], place_holder: bool = False):
         '''
         Add/replace audio associated with this `ELAN_Data` instance.
 
@@ -688,8 +688,8 @@ class ELAN_Data:
 
         self.__modified = True
 
-    def add_segment(self, tier: str = None, start: Union[int, str] = 0, stop: Union[int, str] = 100, 
-                    annotation: str = None, init_df: bool = True):
+    def add_segment(self, tier: str, start: Union[int, str] = 0, stop: Union[int, str] = 100, 
+                    annotation: Optional[str] = "", init_df: bool = True):
         '''
         Adds an annotation segment to a given tier.
 
@@ -807,7 +807,7 @@ class ELAN_Data:
         self.__modified = True
         self.df_status = init_df
         
-    def split_segment(self, splits: list[int] = None, seg_id: str = None):
+    def split_segment(self, splits: Optional[list[int]], seg_id: str):
         '''
         Split a segment at the points specified.
 
@@ -866,7 +866,7 @@ class ELAN_Data:
 
         self.add_segment(tier, start, stop, text, True)
 
-    def merge_segments(self, tier: str = None, seg_ids: list[str] = None, init_df: bool = True):
+    def merge_segments(self, tier: Optional[str], seg_ids: Optional[list[str]], init_df: bool = True):
         '''
         Merge consecutive segments together.
 
@@ -914,9 +914,10 @@ class ELAN_Data:
             self.remove_segment(seg_id, False)
 
         # Will also update self.__modified
-        self.add_segment(tier, start, stop, text, init_df)
+        # Guaranteed to be str due to earlier guard
+        self.add_segment(typing.cast(str, tier), start, stop, text, init_df)
 
-    def remove_segment(self, seg_id: str = None, init_df: bool = True):
+    def remove_segment(self, seg_id: Optional[str], init_df: bool = True):
         '''
         Remove the given audio segment.
 
@@ -944,7 +945,7 @@ class ELAN_Data:
         self.__modified = True
         self.df_status = init_df
 
-    def overlaps(self, seg_id: str = None, tiers: Iterable[str] = None, suprasegments: bool = True) -> pd.DataFrame:
+    def overlaps(self, seg_id: Optional[str], tiers: Optional[Iterable[str]], suprasegments: bool = True) -> pd.DataFrame:
         '''
         Find all segments on different tiers which overlap with the given segment.
 
@@ -1045,7 +1046,7 @@ class ELAN_Data:
             pickle.dump(self, dst, -1)
 
     @staticmethod
-    def from_pickle(file: Union[str, Path, None] = None) -> ELAN_Data:
+    def from_pickle(file: Union[str, Path]) -> ELAN_Data:
         '''
         Creates `ELAN_Data` instance from pickled object.
 
@@ -1079,7 +1080,7 @@ class ELAN_Data:
         '''
 
         if not self.file:
-            raise FileNotFoundError(f"{self.filepath} is not a valid file path")
+            raise FileNotFoundError(f"{self.file.absolute()} is not a valid file path")
 
         # Only works in Python 3.9+
         #ET.indent(self.tree)
