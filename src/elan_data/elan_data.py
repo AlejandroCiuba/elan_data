@@ -2,7 +2,7 @@
 # Created by Alejandro Ciuba, alc307@pitt.edu
 from __future__ import annotations
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence, Union
+from typing import Any, Iterable, Iterator, Sequence, Union
 
 import copy
 import pickle
@@ -56,7 +56,7 @@ class ELAN_Data:
 
 # ===================== INITIALIZATION METHODS =====================    
 
-    def __init__(self, file: Union[str, Path] = None, init_df: bool = False):
+    def __init__(self, file: Union[str, Path, None] = None, init_df: bool = False):
         '''
         Default constructor for an ELAN_Data object.
 
@@ -75,7 +75,7 @@ class ELAN_Data:
         - `ValueError`: If no file was given (either `None` or an empty string).
         '''
 
-        if file is None or str(file) == "":
+        if not file or str(file) == "":
             raise ValueError("No file given")
         
         if isinstance(file, str):
@@ -102,7 +102,7 @@ class ELAN_Data:
             self.tier_data = self.init_dataframe()
 
     @classmethod
-    def from_file(cls, file: Union[str, Path], init_df: bool = False) -> ELAN_Data:
+    def from_file(cls, file: Union[str, Path, None], init_df: bool = False) -> ELAN_Data:
         '''
         Initialize an ELAN_Data object from an existing `.eaf` file, storing all its information.
 
@@ -151,7 +151,7 @@ class ELAN_Data:
         return ed_obj
     
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path], audio: str, init_df: bool = False) -> ELAN_Data:
+    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path, None], audio: str, init_df: bool = False) -> ELAN_Data:
         '''
         Initialize an ELAN_Data object based on a dataframe structured like a tiers dataframe (`ELAN_Data.tiers_data`).
 
@@ -195,8 +195,8 @@ class ELAN_Data:
         return ed_obj
     
     @classmethod
-    def create_eaf(cls, file: Union[str, Path] = None, audio: Union[str, Path] = None, 
-                   tiers: list[str] = None, remove_default: bool = False) -> ELAN_Data:
+    def create_eaf(cls, file: Union[str, Path, None] = None, audio: Union[str, Path, None] = None, 
+                   tiers: Union[list[str], None] = None, remove_default: bool = False) -> ELAN_Data:
         '''
         Creates an ELAN_Data object to work with via Python.
 
@@ -309,7 +309,7 @@ class ELAN_Data:
 
             for ind, line in \
                 enumerate([self.tree.find(f".//*[@TIER_ID='{tier}']//*[@ANNOTATION_ID='{element['ANNOTATION_ID']}']/ANNOTATION_VALUE").text for element in aligns]):
-                if line is not None:
+                if line:
                     text[ind] = line
     
             self.tier_data['TEXT'].extend(text)
@@ -346,8 +346,8 @@ class ELAN_Data:
         name: {self.file.name}
         located at: {self.file.absolute()}
         tiers: {", ".join(self.__tier_names)}
-        associated audio file: {"None" if self.audio is None else self.audio.name}
-        associated audio location: {"None" if self.audio is None else self.audio.absolute()}
+        associated audio file: {"None" if not self.audio else self.audio.name}
+        associated audio location: {"None" if not self.audio else self.audio.absolute()}
         dataframe init: {str(self.__init_data)}
         modified: {str(self.__modified)}
         ''')
@@ -359,7 +359,7 @@ class ELAN_Data:
     def __contains__(self, item: str) -> bool:
         return item in self.__tier_names
     
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[tuple[Any, pd.Series]]:
         return self.init_dataframe().iterrows()
     
     @typing.no_type_check
@@ -434,7 +434,7 @@ class ELAN_Data:
 
 # ===================== MUTATORS =====================
 
-    def add_tier(self, tier: str = None, init_df: bool = True, **kwargs):
+    def add_tier(self, tier: Union[str, None] = None, init_df: bool = True, **kwargs):
         '''
         Add a single tier at the bottom of the tier list.
 
@@ -451,7 +451,7 @@ class ELAN_Data:
             Any metadata that should be included with the tier.
         '''
 
-        if tier is None:
+        if not tier:
             return
 
         root = self.tree.getroot()
@@ -487,7 +487,7 @@ class ELAN_Data:
             Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `True`.
         '''
 
-        if tiers is None or not any(tiers):
+        if not tiers or not any(tiers):
             return 
 
         root = self.tree.getroot()
@@ -554,7 +554,7 @@ class ELAN_Data:
             Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `True`.
         '''
         
-        if tiers is None or not any(tiers):
+        if not tiers or not any(tiers):
             return
 
         root = self.tree.getroot()
@@ -583,7 +583,7 @@ class ELAN_Data:
             Name of the participant.
         '''
 
-        if tier is None or participant is None:
+        if not tier or not participant:
             return
         
         if tier not in self.__tier_names:
@@ -614,7 +614,7 @@ class ELAN_Data:
             Attribute name(s) and value(s); all strings.
         '''
         
-        if tier is None or tier not in self.__tier_names:
+        if not tier or tier not in self.__tier_names:
             return
         
         t = self.tree.getroot().find(f".//*[@TIER_ID='{tier}']")
@@ -648,7 +648,7 @@ class ELAN_Data:
         root.attrib["AUTHOR"] = author
         root.attrib["DATE"] = date
 
-    def add_audio(self, audio: Union[str, Path] = None, place_holder: bool = False):
+    def add_audio(self, audio: Union[str, Path, None] = None, place_holder: bool = False):
         '''
         Add/replace audio associated with this `ELAN_Data` instance.
 
@@ -662,7 +662,7 @@ class ELAN_Data:
             Given filepath is a placeholder that will be updated later; useful when the audio is not available on the current computer.
         '''
 
-        if audio is None:
+        if not audio:
             return
         
         if isinstance(audio, str):
@@ -889,12 +889,12 @@ class ELAN_Data:
         - Up to you to make sure the segments are consecutive; assumes up-to-date DataFrame.
         '''
 
-        if tier is None:
+        if not tier:
             return
         elif tier not in self.__tier_names:
             return
 
-        if seg_ids is None:
+        if not seg_ids:
             return
         
         # Get relevant start and stop times and text information
@@ -936,7 +936,7 @@ class ELAN_Data:
         # Get root and then ALIGNABLE_ANNOTATION tag's parent, ANNOTATION
         rem = self.tree.getroot().find(f".//*[@ANNOTATION_ID='{seg_id}']/..")
         
-        if rem is None:
+        if not rem:
             return
 
         typing.cast(ET.Element, self.tree.getroot().find(f".//*[@ANNOTATION_ID='{seg_id}']/../..")).remove(rem)
@@ -1045,7 +1045,7 @@ class ELAN_Data:
             pickle.dump(self, dst, -1)
 
     @staticmethod
-    def from_pickle(file: Union[str, Path] = None) -> ELAN_Data:
+    def from_pickle(file: Union[str, Path, None] = None) -> ELAN_Data:
         '''
         Creates `ELAN_Data` instance from pickled object.
 
@@ -1067,7 +1067,7 @@ class ELAN_Data:
         - Any errors thrown by `open()` or `pickle.load()`.
         '''
 
-        if file is None or str(file) == "":
+        if not file or str(file) == "":
             raise FileNotFoundError("No filepath provided")
         
         with open(file, 'rb') as src:
@@ -1087,7 +1087,7 @@ class ELAN_Data:
         def _pretty_print(current, parent=None, index=-1, depth=0):
             for i, node in enumerate(current):
                 _pretty_print(node, current, i, depth + 1)
-            if parent is not None:
+            if parent:
                 if index == 0:
                     parent.text = '\n' + ('\t' * depth)
                 else:

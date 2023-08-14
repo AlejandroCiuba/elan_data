@@ -1,6 +1,6 @@
 # Convert .eaf files to the Rich Transcription Time Marked (RTTM) format
 from __future__ import annotations
-from elan_data import ELAN_Data
+from elan_data.elan_data import ELAN_Data
 from pathlib import Path
 from typing import Callable, Iterator, TYPE_CHECKING, Union
 
