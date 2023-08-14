@@ -78,8 +78,9 @@ def eaf_to_rttm(
                 rttm.write("\n")
 
 
-def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path], filter: list = [], 
-                encoding: str = "UTF-8", formatter: Optional[Callable[..., str]] = None):
+def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
+                filter: list = [], encoding: str = "UTF-8",
+                formatter: Optional[Callable[..., str]] = None):
     """
     Takes the text of an `.eaf` file and outputs it to a text file.
 

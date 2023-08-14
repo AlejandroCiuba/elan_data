@@ -9,7 +9,6 @@ import pickle
 import textwrap
 import typing
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as ET
@@ -40,11 +39,13 @@ MINIMUM_ELAN = \
     <CONSTRAINT
         DESCRIPTION="Time alignable annotations within the parent annotation's time interval, gaps are allowed" STEREOTYPE="Included_In"/>
 </ANNOTATION_DOCUMENT>
-'''
+'''  # noqa: E122
 
 # ===================== ELAN_Data Class =====================
 
+
 class ELAN_Data:
+
     '''
     Object used to create, edit, and parse `eaf` files used by ELAN software.
 
@@ -54,7 +55,7 @@ class ELAN_Data:
     - Any method with `init_df` will only (re)initialize the DataFrame if no errors were raised or it didn't exit early (if applicable).
     '''
 
-# ===================== INITIALIZATION METHODS =====================    
+# ===================== INITIALIZATION METHODS =====================
 
     def __init__(self, file: Union[str, Path], init_df: bool = False):
         '''
@@ -77,21 +78,21 @@ class ELAN_Data:
 
         if not file or str(file) == "":
             raise ValueError("No file given")
-        
+
         if isinstance(file, str):
             file = Path(file)
-        
+
         self.__modified: bool = False
 
         self.file: Path = file
-        
+
         # Parse the XML
         self.tree: ET.ElementTree = ET.ElementTree(ET.fromstring(MINIMUM_ELAN.strip()))
 
-        #tier names; default might still be there
+        # tier names; default might still be there
         self.__tier_names: list[str] = [element.attrib['TIER_ID'] for element in self.tree.findall(".//TIER")]
 
-        # Audio file path 
+        # Audio file path
         self.audio: Optional[Path] = None
 
         # Separate the dataframe init process
@@ -125,9 +126,9 @@ class ELAN_Data:
 
         - Any error from `open()` or `xml.etree.ElementTree.parse()`.
         '''
-        
+
         ed_obj = cls(file)
-        
+
         # Parse the XML
         with open(ed_obj.file, 'r', encoding=_ELAN_ENCODING) as src:
             ed_obj.tree = ET.parse(src)
@@ -136,7 +137,7 @@ class ELAN_Data:
         ed_obj.__tier_names = [element.attrib['TIER_ID'] for element in ed_obj.tree.findall(".//TIER")]
 
         # Separate the audio loading process, assumes local storage
-        descriptor = ed_obj.tree.find(f".//*[@MIME_TYPE]")
+        descriptor = ed_obj.tree.find(".//*[@MIME_TYPE]")
 
         assert isinstance(descriptor, ET.Element)
 
@@ -149,7 +150,7 @@ class ELAN_Data:
             ed_obj.tier_data = ed_obj.init_dataframe()
 
         return ed_obj
-    
+
     @classmethod
     def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path], audio: str, init_df: bool = False) -> ELAN_Data:
         '''
@@ -193,9 +194,9 @@ class ELAN_Data:
             ed_obj.init_dataframe()
 
         return ed_obj
-    
+
     @classmethod
-    def create_eaf(cls, file: Union[str, Path], audio: Optional[Union[str, Path]], 
+    def create_eaf(cls, file: Union[str, Path], audio: Optional[Union[str, Path]],
                    tiers: list[str], remove_default: bool = False) -> ELAN_Data:
         '''
         Creates an ELAN_Data object to work with via Python.
@@ -209,7 +210,7 @@ class ELAN_Data:
         audio : `str` or `pathlib.Path`
             File path to the associated audio file.
 
-        tiers : `list[str]` 
+        tiers : `list[str]`
             List of strings containing all tiers.
 
         remove_default : `bool`
@@ -233,7 +234,7 @@ class ELAN_Data:
 
         if tiers:
             ed_obj.add_tiers(tiers)
-        
+
         if audio:
             ed_obj.add_audio(audio)
 
@@ -279,22 +280,22 @@ class ELAN_Data:
         - DataFrame also accessible via the `.tier_data` attribute.
         - Use `.check_df_status` to see if the current `tier_data` DataFrame is up-to-date.
         - This is the method called at the end of all methods where `init_df = True`.
-        '''
+        '''  # noqa: W605
 
         # Create a dataframe containing: TIER_ID, START, STOP, DURATION, TEXT, SEGMENT_ID for all TIER_ID
-        self.tier_data = {'TIER_ID':       [], 
+        self.tier_data = {'TIER_ID':       [],
                           'START':         [],
                           'STOP':          [],
-                         #'DURATION':      [], Created later
+                          # 'DURATION':      [], Created later
                           'TEXT':          [],
                           'SEGMENT_ID':    []}
 
         for tier in self.__tier_names:
 
             # Search for the information we'll need to extract necessary data from the XML tree
-            search = f".//*[@TIER_ID='{tier}']//ALIGNABLE_ANNOTATION" 
+            search = f".//*[@TIER_ID='{tier}']//ALIGNABLE_ANNOTATION"
             aligns = [element.attrib for element in self.tree.findall(search)]
-            
+
             td = [self.tree.find(f".//*[@TIME_SLOT_ID='{element['TIME_SLOT_REF1']}']").attrib['TIME_VALUE'] for element in aligns]
 
             self.tier_data['START'].extend(td)
@@ -304,14 +305,14 @@ class ELAN_Data:
             # Honestly, it's a really stupid way of doing this but:
             # If the for-loop list is none, text will all be empty strings, which is what we want
             # But if there is some data in the for-loop list, we have three scenarios
-            # None at the beginning, end, or middle, all of which need to be accounted for 
+            # None at the beginning, end, or middle, all of which need to be accounted for
             text = [''] * len(td)
 
-            for ind, line in \
-                enumerate([self.tree.find(f".//*[@TIER_ID='{tier}']//*[@ANNOTATION_ID='{element['ANNOTATION_ID']}']/ANNOTATION_VALUE").text for element in aligns]):
+            for ind, line in enumerate([self.tree.find(f".//*[@TIER_ID='{tier}']//*[@ANNOTATION_ID='{element['ANNOTATION_ID']}']/ANNOTATION_VALUE").text for element in aligns]):
+
                 if line:
                     text[ind] = line
-    
+
             self.tier_data['TEXT'].extend(text)
             self.tier_data['SEGMENT_ID'].extend([element['ANNOTATION_ID'] for element in aligns])
             self.tier_data['TIER_ID'].extend([tier] * len(td))
@@ -319,11 +320,11 @@ class ELAN_Data:
         self.tier_data = pd.DataFrame(self.tier_data)
 
         # Perform the data manipulations
-        self.tier_data = self.tier_data.astype({'START': np.int32, 
+        self.tier_data = self.tier_data.astype({'START': np.int32,
                                                 'STOP': np.int32,
                                                 'SEGMENT_ID': str,
                                                 'TIER_ID': 'category',
-                                                'TEXT': str,})
+                                                'TEXT': str, })
 
         # Lastly, add DURATION
         self.tier_data['DURATION'] = (self.tier_data.STOP - self.tier_data.START).astype(dtype=np.int32)
@@ -338,7 +339,7 @@ class ELAN_Data:
         return \
         textwrap.dedent(f'''\
         {type(self).__name__}({self.tree!r}, {self.tier_data!r}, {self.__tier_names!r}, {self.file!r}, {self.audio!r}, {self.__init_data!r}, {self.__modified!r})
-        ''')
+        ''')  # noqa: E122
 
     def __str__(self) -> str:
         return \
@@ -350,30 +351,30 @@ class ELAN_Data:
         associated audio location: {"None" if not self.audio else self.audio.absolute()}
         dataframe init: {str(self.__init_data)}
         modified: {str(self.__modified)}
-        ''')
+        ''')  # noqa: E122
 
-    # Using these methods auto-(re)initializes the DataFrame 
+    # Using these methods auto-(re)initializes the DataFrame
     def __len__(self) -> int:
         return len(self.init_dataframe())
-    
+
     def __contains__(self, item: str) -> bool:
         return item in self.__tier_names
-    
+
     def __iter__(self) -> Iterator[tuple[Any, pd.Series]]:
         return self.init_dataframe().iterrows()
-    
+
     @typing.no_type_check
     def __eq__(self, other: object) -> bool:
 
         if type(self).__name__ != type(other).__name__:
             return NotImplemented
-        
+
         self.df_status = True
         other.df_status = True
 
         return self.file == other.file and self.audio == other.audio \
-           and self.__tier_names == other.tier_names and self.tier_data == other.tier_data \
-           and self.tree == other.tree and self.__modified == other.modified
+            and self.__tier_names == other.tier_names and self.tier_data == other.tier_data \
+            and self.tree == other.tree and self.__modified == other.modified
 
 # ===================== FIELDS =====================
 
@@ -385,14 +386,14 @@ class ELAN_Data:
     def df_status(self) -> bool:
         '''
         `True` if the DataFrame is up-to-date with the XML; `False` otherwise.
-        
+
         Setting this to `True` will automatically update the DataFrame.
         '''
         return self.__init_data
-    
+
     @df_status.setter
     def df_status(self, init_df: bool):
-        
+
         self.__init_data = init_df
 
         if init_df:
@@ -417,7 +418,7 @@ class ELAN_Data:
         seg_id : `str`
             The segment's ID; in the form `a\d{1,}`
 
-        Returns 
+        Returns
         ---
 
         - Text inside the segment or `None` if no segment was found.
@@ -426,7 +427,7 @@ class ELAN_Data:
         ---
 
         - Assumes up-to-date `.tier_data` DataFrame.
-        '''
+        '''  # noqa: W605
 
         row = self.tier_data.loc[self.tier_data.SEGMENT_ID == seg_id, "TEXT"].reset_index(drop=True)
 
@@ -480,7 +481,7 @@ class ELAN_Data:
         Parameters
         ---
 
-        tiers : `Sequence[str]` 
+        tiers : `Sequence[str]`
             List of tiers to add.
 
         init_df : `bool`
@@ -488,7 +489,7 @@ class ELAN_Data:
         '''
 
         if not tiers or not any(tiers):
-            return 
+            return
 
         root = self.tree.getroot()
 
@@ -496,7 +497,7 @@ class ELAN_Data:
         pretiers = len(self.__tier_names)
 
         for i, tier in enumerate(tiers):
-            
+
             t = ET.Element("TIER")
             t.attrib["LINGUISTIC_TYPE_REF"] = "default-lt"
             t.attrib["TIER_ID"] = tier
@@ -553,7 +554,7 @@ class ELAN_Data:
         init_df : `bool`
             Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `True`.
         '''
-        
+
         if not tiers or not any(tiers):
             return
 
@@ -563,7 +564,7 @@ class ELAN_Data:
             if tier.attrib["TIER_ID"] in tiers:
                 root.remove(tier)
                 self.__modified = True
-        
+
         self.__tier_names = list(set(self.tier_names) - set(tiers))
 
         self.__modified = True
@@ -585,14 +586,14 @@ class ELAN_Data:
 
         if not tier or not participant:
             return
-        
+
         if tier not in self.__tier_names:
             return
-        
+
         t = self.tree.getroot().find(f".//*[@TIER_ID='{tier}']")
 
         assert isinstance(t, ET.Element)
-        
+
         t.attrib["PARTICIPANT"] = participant
 
         self.__modified = True
@@ -603,7 +604,7 @@ class ELAN_Data:
 
         Parameters
         ---
-        
+
         tier : `str`
             Tier to have metadata added/replaced; does nothing if tier does not exist.
 
@@ -613,13 +614,13 @@ class ELAN_Data:
         **kwargs:
             Attribute name(s) and value(s); all strings.
         '''
-        
+
         if not tier or tier not in self.__tier_names:
             return
-        
+
         t = self.tree.getroot().find(f".//*[@TIER_ID='{tier}']")
         assert isinstance(t, ET.Element)
-        
+
         t.attrib = {**(t.attrib), **kwargs}
 
         self.__modified = True
@@ -664,7 +665,7 @@ class ELAN_Data:
 
         if not audio:
             return
-        
+
         if isinstance(audio, str):
             self.audio = Path(audio)
         else:
@@ -678,7 +679,7 @@ class ELAN_Data:
         parent = self.tree.find("HEADER")
 
         assert isinstance(parent, ET.Element)
-        
+
         old_audio = parent.find("MEDIA_DESCRIPTOR")
 
         if old_audio:
@@ -688,7 +689,7 @@ class ELAN_Data:
 
         self.__modified = True
 
-    def add_segment(self, tier: str, start: Union[int, str] = 0, stop: Union[int, str] = 100, 
+    def add_segment(self, tier: str, start: Union[int, str] = 0, stop: Union[int, str] = 100,
                     annotation: Optional[str] = "", init_df: bool = True):
         '''
         Adds an annotation segment to a given tier.
@@ -707,7 +708,7 @@ class ELAN_Data:
 
         annotation : `str`
             What to put as the annotation.
-            
+
         init_df : `bool`
             Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `True`.
 
@@ -722,7 +723,7 @@ class ELAN_Data:
 
         - If the tier does not exist, this will automatically make it.
         '''
-        
+
         if not tier:
             raise ValueError("No tier given")
 
@@ -775,7 +776,7 @@ class ELAN_Data:
             t.append(annot)
 
         else:
-            
+
             # This is where things get funky, since I don't want the user to have to re-init
             # the dataframe after each segment insertion, I need to manually findout what the
             # TIME_SLOT_ID values of seg_beg should be as well as the ANNOTATION_ID of align.
@@ -806,7 +807,7 @@ class ELAN_Data:
 
         self.__modified = True
         self.df_status = init_df
-        
+
     def split_segment(self, splits: Optional[list[int]], seg_id: str):
         '''
         Split a segment at the points specified.
@@ -830,12 +831,12 @@ class ELAN_Data:
 
         - This method will remove all items from the given splits list; make a copy if you wish to use it afterwards.
         - This method will always reinitialize the DataFrame. `.TEXT` remains the same across all splits.
-        '''
+        '''  # noqa: W605
 
         # Check to see if everything is correctly initialized
         if not splits:
             return
-        
+
         # Reinit the dataframe
         self.init_dataframe()
 
@@ -844,7 +845,7 @@ class ELAN_Data:
 
         if segment.empty or len(segment) > 1:
             raise ValueError("No segment matches the given seg_id value")
-        
+
         start, stop, text, tier = int(segment.START.values[0]), int(segment.STOP.values[0]), segment.TEXT.values[0], segment.TIER_ID.values[0]
 
         # Remove the old segment
@@ -855,7 +856,7 @@ class ELAN_Data:
 
         if start >= splits[-1] or stop <= splits[0]:
             raise ValueError("Split list times are out of bounds for the specified segment")
-        
+
         # Do the start
         start = splits.pop(-1)
         self.add_segment(tier, start, start, text, False)
@@ -896,7 +897,7 @@ class ELAN_Data:
 
         if not seg_ids:
             return
-        
+
         # Get relevant start and stop times and text information
         seg_mask = (self.tier_data.SEGMENT_ID.isin(seg_ids)) & (self.tier_data.TIER_ID == tier)
         segs_df = self.tier_data[seg_mask]
@@ -905,10 +906,10 @@ class ELAN_Data:
             return
 
         start, stop = segs_df.START.min(), \
-                      segs_df.STOP.max()
-        
+            segs_df.STOP.max()
+
         text = ' '.join(segs_df.TEXT.to_list())
-        tier = segs_df.TIER_ID.iloc[0] # Assumes they are all in the same tier!!!
+        tier = segs_df.TIER_ID.iloc[0]  # Assumes they are all in the same tier!!!
 
         for seg_id in seg_ids:
             self.remove_segment(seg_id, False)
@@ -929,14 +930,14 @@ class ELAN_Data:
 
         init_df : `bool`
             Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `True`.
-        '''
+        '''  # noqa: W605
 
         # NOTE: I don't remove a segment's associated TIME_SLOT values because
         # multiple segments could use the same TIME_SLOT value.
-        
+
         # Get root and then ALIGNABLE_ANNOTATION tag's parent, ANNOTATION
         rem = self.tree.getroot().find(f".//*[@ANNOTATION_ID='{seg_id}']/..")
-        
+
         if not rem:
             return
 
@@ -955,7 +956,7 @@ class ELAN_Data:
         seg_id : `str`
             Segment ID; usually `a\d{1,}`.
 
-        tiers : `Sequence[str]` 
+        tiers : `Sequence[str]`
             Which tiers to check for overlapped segments (excludes tier current segment is on).
 
         suprasegments : `bool`
@@ -975,11 +976,11 @@ class ELAN_Data:
         ---
 
         - This method will always reinitialize the DataFrame.
-        '''
-        
+        '''  # noqa: W605
+
         if not tiers:
             return
-            
+
         df = self.init_dataframe()
 
         # Check for the segment based on its ID
@@ -987,7 +988,7 @@ class ELAN_Data:
 
         if segment.empty or len(segment) > 1:
             raise ValueError("No segment matches the given seg_id value")
-        
+
         start, stop, tier = int(segment.START.values[0]), int(segment.STOP.values[0]), str(segment.TIER_ID.values[0])
 
         # Tier mask; automatically exclude the segment's own tier
@@ -1005,12 +1006,12 @@ class ELAN_Data:
             o4 = (df.START < start) & (df.STOP > stop)
 
             return df[t & o1_3 | o4]
-        
+
         else:
             return df[t & o1_3]
 
 # ===================== OTHER METHODS =====================
-    
+
     def copy(self) -> ELAN_Data:
         '''
         Create a deep copy of this `ELAN_Data` object.
@@ -1019,7 +1020,7 @@ class ELAN_Data:
         ---
 
         - `df_status` will be `True
-        - `modified` will be `False` 
+        - `modified` will be `False`
         '''
 
         eaf = copy.deepcopy(self)
@@ -1027,7 +1028,7 @@ class ELAN_Data:
         eaf.__modified = False
 
         return eaf
-    
+
     def to_pickle(self, file: Union[str, Path] = ""):
         '''
         Pickles the object.
@@ -1070,7 +1071,7 @@ class ELAN_Data:
 
         if not file or str(file) == "":
             raise FileNotFoundError("No filepath provided")
-        
+
         with open(file, 'rb') as src:
             return pickle.load(src)
 
@@ -1083,7 +1084,7 @@ class ELAN_Data:
             raise FileNotFoundError(f"{self.file.absolute()} is not a valid file path")
 
         # Only works in Python 3.9+
-        #ET.indent(self.tree)
+        # ET.indent(self.tree)
         # Shamelessly ripped from https://stackoverflow.com/questions/28813876/how-do-i-get-pythons-elementtree-to-pretty-print-to-an-xml-file
         def _pretty_print(current, parent=None, index=-1, depth=0):
             for i, node in enumerate(current):
