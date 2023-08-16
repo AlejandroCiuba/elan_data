@@ -1,6 +1,6 @@
 # Convert .eaf files to the Rich Transcription Time Marked (RTTM) format
 from __future__ import annotations
-from elan_data.elan_data import ELAN_Data
+from elan_data import ELAN_Data
 from pathlib import Path
 from typing import Callable, Iterator, Optional, Union
 
@@ -19,16 +19,12 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-MODE = Literal["rb", "wb"]
+MODE = Literal["rb", "wb", "wb+"]
 RETURN = Literal["wave", "ndarray"]
 
 
-def eaf_to_rttm(
-    src: Union[str, Path, ELAN_Data],
-    dst: Union[str, Path],
-    filter: list = [],
-    encoding: str = "UTF-8",
-):
+def eaf_to_rttm(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
+                filter: list = [], encoding: str = "UTF-8"):
     """
     Convert a .eaf file to the RTTM format.
 
@@ -79,8 +75,7 @@ def eaf_to_rttm(
 
 
 def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
-                filter: list = [], encoding: str = "UTF-8",
-                formatter: Optional[Callable[..., str]] = None):
+                filter: list = [], encoding: str = "UTF-8", formatter: Optional[Callable[..., str]] = None):
     """
     Takes the text of an `.eaf` file and outputs it to a text file.
 
@@ -126,15 +121,16 @@ def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
 
 
 @contextlib.contextmanager
-def audio_loader(eaf: ELAN_Data, mode: MODE = "rb", ret_type: RETURN = "wave") -> Iterator[Union[wave.Wave_read, wave.Wave_write, tuple[np.ndarray, int]]]:
+def audio_loader(audio: Union[str, Path], mode: MODE = "rb", ret_type: RETURN = "wave") \
+                 -> Iterator[Union[wave.Wave_read, wave.Wave_write, tuple[np.ndarray, int]]]:
     """
     Context manageable function that loads in the audio associated with the `.eaf` file. File must be in directory stated in XML. Closes file upon end.
 
     Parameters
     ---
 
-    ed : `ELAN_Data`
-        Correct audio filepath must be established.
+    audio : `str` or `Path`
+        Filepath to the audio.
 
     mode : `'rb'` or `'wb'`
         Defaults to `'rb'` (read-binary).
@@ -151,55 +147,58 @@ def audio_loader(eaf: ELAN_Data, mode: MODE = "rb", ret_type: RETURN = "wave") -
     Raises
     ---
 
-    - `ValueError`: If no `ELAN_Data` instance is provided.
-    - `ValueError`: If the `ELAN_Data` instance has no associated audio file.
+    - `TypeError`: If the given audio isn't a string or Path.
     - `TypeError`: If `ret_type` is not `"wave"` or `"ndarray"`.
     """
 
-    if not eaf:
-        raise ValueError("No ELAN_Data object provided")
+    # Error handling
+    if not isinstance(audio, Path):
+        if isinstance(audio, str):
+            audio = Path(audio)
+        else:
+            raise TypeError("audio is not a string or Path")
 
     if ret_type not in ("wave", "ndarray"):
         raise TypeError(f"{ret_type} not an option")
 
-    try:
-        if not eaf.audio:
-            raise ValueError("ELAN_Data object has no associated audio file")
+    if ret_type == "ndarray" and mode == "wb":
+        raise ValueError("mode should be rb for the ret_type ndarray")
 
-        audio = wave.open(str(eaf.audio.absolute()), mode)
+    wav = wave.open(str(audio.absolute()), mode)
+
+    try:
 
         if ret_type == "ndarray" and mode == "rb":
-            audio = typing.cast(wave.Wave_read, audio)
-            samp_width = audio.getsampwidth()
+            wav = typing.cast(wave.Wave_read, wav)
+            samp_width = wav.getsampwidth()
             dtype = np.int16
+            yield (np.frombuffer(wav.readframes(-1), dtype=dtype), samp_width)
 
-            yield (np.frombuffer(audio.readframes(-1), dtype=dtype), samp_width)
-
-        elif ret_type == "ndarray" and mode == "wb":
-            raise ValueError("mode should be rb for the ret_type ndarray")
-
-        else:
-            yield audio
+        yield wav
 
     finally:
-        audio.close()
+        wav.close()
 
 
-def sound_wave(eaf: ELAN_Data, start: float = 0, stop: float = -1, **kwargs) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
+def sound_wave(audio: Union[str, Path], start: float = 0, stop: float = -1,
+               name: str = "Soundwave", **kwargs) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """
     Plots the audio's amplitude for each channel.
 
     Parameters
     ---
 
-    ed : `ELAN_Data`
-        Contains filepath to audio.
+    audio : `str` or `Path`
+        Filepath to the audio.
 
     start : `float`
         Start of the sound wave (in seconds).
 
     stop : `float`
         End of the sound wave (in seconds); use `-1` to capture the until the end.
+
+    name : `str`
+        Title to use for the graph.
 
     **kwargs : `dict[str : int]`
         Any colors (`str`) and their corresponding channels (`int`)
@@ -214,25 +213,16 @@ def sound_wave(eaf: ELAN_Data, start: float = 0, stop: float = -1, **kwargs) -> 
     Raises
     ---
 
-    - `ValueError`: If no `ELAN_Data` instance is provided.
-    - `ValueError`: If the `ELAN_Data` instance has no associated audio file.
+    - `TypeError`: If the given audio isn't a string or Path.
     - `ValueError`: If the start time is greater than the stop time (excluding -1).
     - `ValueError`: If the start time is greater than the audio duration.
     """
-
     # Error handling
-    if not eaf:
-        raise ValueError("No ELAN_Data object provided")
-
-    if not eaf.audio:
-        raise ValueError("ELAN_Data has no associated audio file")
-
     if start >= stop and stop != -1:
         raise ValueError("Start time cannot be greater than stop time")
 
     # Get audio information
-
-    with audio_loader(eaf) as src:
+    with audio_loader(audio) as src:
         # So mypy won't be absolutely stupid
         assert isinstance(src, (wave.Wave_read))
 
@@ -283,7 +273,7 @@ def sound_wave(eaf: ELAN_Data, start: float = 0, stop: float = -1, **kwargs) -> 
                 alpha=1 - ((ind) * (1 / len(kwargs))),
             )
 
-    ax.set_title(f"Soundwave of {eaf.audio.name}")
+    ax.set_title(f"Soundwave of {name}")
     ax.set_xlabel("Time (Seconds)")
     ax.set_ylabel("Amplitude")
     ax.legend()

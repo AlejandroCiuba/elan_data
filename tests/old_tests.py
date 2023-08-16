@@ -1,7 +1,7 @@
 from elan_data import ELAN_Data
 from elan_data.elan_utils import audio_loader, soundwave
 
-
+# TODO: Turn these into like... actual tests
 def _main():
 
     obj = ELAN_Data.create_eaf("test.eaf", "test_recording.wav", ["test", "test_2"])
