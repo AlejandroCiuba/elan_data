@@ -8,7 +8,6 @@ import contextlib
 import matplotlib.figure
 import matplotlib.axes
 import sys
-import typing
 import wave
 
 import matplotlib.pyplot as plt
@@ -19,7 +18,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-MODE = Literal["rb", "wb", "wb+"]
+MODE = Literal["rb", "wb", "w", "r"]
 RETURN = Literal["wave", "ndarray"]
 
 
@@ -121,10 +120,9 @@ def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
 
 
 @contextlib.contextmanager
-def audio_loader(audio: Union[str, Path], mode: MODE = "rb", ret_type: RETURN = "wave") \
-                 -> Iterator[Union[wave.Wave_read, wave.Wave_write, tuple[np.ndarray, int]]]:
+def audio_loader(audio: Union[str, Path], mode: Union[MODE, str] = "rb") -> Iterator[Union[wave.Wave_read, wave.Wave_write]]:
     """
-    Context manageable function that loads in the audio associated with the `.eaf` file. File must be in directory stated in XML. Closes file upon end.
+    Context manageable function that loads in audio. Closes file upon end.
 
     Parameters
     ---
@@ -135,20 +133,20 @@ def audio_loader(audio: Union[str, Path], mode: MODE = "rb", ret_type: RETURN = 
     mode : `'rb'` or `'wb'`
         Defaults to `'rb'` (read-binary).
 
-    ret_type : `"wave"` or `"ndarray"`
-        What to yield, either a `wave` file object (from the `wave` library) or a tuple of an `ndarray` from `numpy` and the audio's sample width.
-
     Yields
     ---
 
     - `wave` file from the `wave` library.
-    - A tuple of an `ndarray` from `numpy` and the audio's sample width.
 
     Raises
     ---
 
     - `TypeError`: If the given audio isn't a string or Path.
-    - `TypeError`: If `ret_type` is not `"wave"` or `"ndarray"`.
+
+    Notes
+    ---
+
+    - Essentially just a wrapper around `wave.open` to allow Paths. There might be more functionality in future iterations.
     """
 
     # Error handling
@@ -158,24 +156,10 @@ def audio_loader(audio: Union[str, Path], mode: MODE = "rb", ret_type: RETURN = 
         else:
             raise TypeError("audio is not a string or Path")
 
-    if ret_type not in ("wave", "ndarray"):
-        raise TypeError(f"{ret_type} not an option")
-
-    if ret_type == "ndarray" and mode == "wb":
-        raise ValueError("mode should be rb for the ret_type ndarray")
-
     wav = wave.open(str(audio.absolute()), mode)
 
     try:
-
-        if ret_type == "ndarray" and mode == "rb":
-            wav = typing.cast(wave.Wave_read, wav)
-            samp_width = wav.getsampwidth()
-            dtype = np.int16
-            yield (np.frombuffer(wav.readframes(-1), dtype=dtype), samp_width)
-
         yield wav
-
     finally:
         wav.close()
 
