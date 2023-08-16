@@ -21,7 +21,7 @@ class TestAudioLoader:
             # The wave module is annoying and expects us to always write when opening a writable file
             # It will also automatically delete any wave file that already exists...
             with pytest.raises(wave.Error):
-                with audio_loader("test_writing.wav", mode) as src:
+                with audio_loader("test/test_writing.wav", mode) as src:
                     assert isinstance(src, wave.Wave_write)
         else:    
             raise TypeError("mode type not implemented")
