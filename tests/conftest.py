@@ -1,3 +1,6 @@
+# This file contains all test fixtures
+# Created by Alejandro Ciuba, alc307@pitt.edu
+
 from pathlib import Path
 
 import pytest

@@ -1,3 +1,5 @@
+# Tests the various functions found in elan_data.elan_utils
+# Created by Alejandro Ciuba, alc307@pitt.edu
 from __future__ import annotations
 from elan_data.elan_utils import audio_loader, eaf_to_rttm, sound_wave
 from pathlib import Path
@@ -19,9 +21,9 @@ class TestAudioLoader:
                 assert isinstance(src, wave.Wave_read)
         elif mode == "wb":
             # The wave module is annoying and expects us to always write when opening a writable file
-            # It will also automatically delete any wave file that already exists...
+            # It will also automatically erase *all* contents of any wave file that already exists...
             with pytest.raises(wave.Error):
-                with audio_loader("test/test_writing.wav", mode) as src:
+                with audio_loader("tests/test_writing.wav", mode) as src:
                     assert isinstance(src, wave.Wave_write)
         else:    
             raise TypeError("mode type not implemented")
