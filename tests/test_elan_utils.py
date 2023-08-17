@@ -1,8 +1,11 @@
 # Tests the various functions found in elan_data.elan_utils
 # Created by Alejandro Ciuba, alc307@pitt.edu
 from __future__ import annotations
-from elan_data.elan_utils import (audio_loader,)  # eaf_to_rttm, eaf_to_text, sound_wave
+from elan_data import ELAN_Data
+from elan_data.elan_utils import (audio_loader, 
+                                  eaf_to_rttm, )  # eaf_to_text, sound_wave
 from pathlib import Path
+from pytest import MonkeyPatch
 
 import pytest
 import wave
@@ -59,8 +62,19 @@ class TestAudioLoader:
 
 
 class TestEAFToRTTM:
-    pass
+    
+    @pytest.fixture(scope="class")
+    def setup(mockelan) -> None:
+        """
+        Setup all the monkeypatches
+        """
+        MonkeyPatch.setattr(ELAN_Data, "from_file", mockelan.from_file)
+        MonkeyPatch.setattr(ELAN_Data, "df_status", mockelan.df_status)
+        MonkeyPatch.setattr(ELAN_Data, "file", mockelan.file)
+        MonkeyPatch.setattr(ELAN_Data, "tier_data", mockelan.tier_data)
 
+    def test_default_args_elan(setup, mockelan) -> None:
+        eaf_to_rttm(mockelan, "test_dst.rttm")
 
 class TestEAFToText:
     pass

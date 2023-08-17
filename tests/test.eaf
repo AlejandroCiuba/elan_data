@@ -1,50 +1,78 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<ANNOTATION_DOCUMENT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" AUTHOR="" DATE="" FORMAT="3.0" VERSION="3.0" xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv3.0.xsd">
-	<HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">
-		<MEDIA_DESCRIPTOR MEDIA_URL="file:///home/computer_cat/Documents/Programs/Python_Programs/elan_data/src/elan_data/test_recording.wav" MIME_TYPE="audio/x-wav" />
-	</HEADER>
-	<TIME_ORDER>
-		<TIME_SLOT TIME_SLOT_ID="ts1" TIME_VALUE="0" />
-		<TIME_SLOT TIME_SLOT_ID="ts2" TIME_VALUE="6880" />
-		<TIME_SLOT TIME_SLOT_ID="ts3" TIME_VALUE="400" />
-		<TIME_SLOT TIME_SLOT_ID="ts4" TIME_VALUE="6580" />
-		<TIME_SLOT TIME_SLOT_ID="ts5" TIME_VALUE="500" />
-		<TIME_SLOT TIME_SLOT_ID="ts6" TIME_VALUE="500" />
-		<TIME_SLOT TIME_SLOT_ID="ts7" TIME_VALUE="3000" />
-		<TIME_SLOT TIME_SLOT_ID="ts8" TIME_VALUE="3000" />
-		<TIME_SLOT TIME_SLOT_ID="ts9" TIME_VALUE="6000" />
-		<TIME_SLOT TIME_SLOT_ID="ts10" TIME_VALUE="6000" />
-		<TIME_SLOT TIME_SLOT_ID="ts11" TIME_VALUE="6000" />
-		<TIME_SLOT TIME_SLOT_ID="ts12" TIME_VALUE="6880" />
-	</TIME_ORDER>
-	<TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="default" />
-	<TIER LINGUISTIC_TYPE_REF="default-lt" PARTICIPANT="Myself" TIER_ID="creator">
-		<ANNOTATION>
-			<ALIGNABLE_ANNOTATION ANNOTATION_ID="a1" TIME_SLOT_REF1="ts5" TIME_SLOT_REF2="ts6">
-				<ANNOTATION_VALUE>Hello - This is a test recording . for the ELAN Data Object .</ANNOTATION_VALUE>
-			</ALIGNABLE_ANNOTATION>
-		</ANNOTATION>
-		<ANNOTATION>
-			<ALIGNABLE_ANNOTATION ANNOTATION_ID="a2" TIME_SLOT_REF1="ts7" TIME_SLOT_REF2="ts8">
-				<ANNOTATION_VALUE>Hello - This is a test recording . for the ELAN Data Object .</ANNOTATION_VALUE>
-			</ALIGNABLE_ANNOTATION>
-		</ANNOTATION>
-		<ANNOTATION>
-			<ALIGNABLE_ANNOTATION ANNOTATION_ID="a3" TIME_SLOT_REF1="ts9" TIME_SLOT_REF2="ts10">
-				<ANNOTATION_VALUE>Hello - This is a test recording . for the ELAN Data Object .</ANNOTATION_VALUE>
-			</ALIGNABLE_ANNOTATION>
-		</ANNOTATION>
-		<ANNOTATION>
-			<ALIGNABLE_ANNOTATION ANNOTATION_ID="a4" TIME_SLOT_REF1="ts11" TIME_SLOT_REF2="ts12">
-				<ANNOTATION_VALUE>Hello - This is a test recording . for the ELAN Data Object .</ANNOTATION_VALUE>
-			</ALIGNABLE_ANNOTATION>
-		</ANNOTATION>
-	</TIER>
-	<TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="test_2" />
-	<TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="THE FINAL TIER" />
-	<LINGUISTIC_TYPE GRAPHIC_REFERENCES="false" LINGUISTIC_TYPE_ID="default-lt" TIME_ALIGNABLE="true" />
-	<CONSTRAINT DESCRIPTION="Time subdivision of parent annotation's time interval, no time gaps allowed within this interval" STEREOTYPE="Time_Subdivision" />
-	<CONSTRAINT DESCRIPTION="Symbolic subdivision of a parent annotation. Annotations refering to the same parent are ordered" STEREOTYPE="Symbolic_Subdivision" />
-	<CONSTRAINT DESCRIPTION="1-1 association with a parent annotation" STEREOTYPE="Symbolic_Association" />
-	<CONSTRAINT DESCRIPTION="Time alignable annotations within the parent annotation's time interval, gaps are allowed" STEREOTYPE="Included_In" />
+<?xml version="1.0" encoding="UTF-8"?>
+<ANNOTATION_DOCUMENT AUTHOR="" DATE="2023-08-16T20:20:36-05:00"
+    FORMAT="3.0" VERSION="3.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv3.0.xsd">
+    <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">
+        <MEDIA_DESCRIPTOR
+            MEDIA_URL="file:///home/computer_cat/Programs/Python_Programs/elan_data/tests/test_recording.wav"
+            MIME_TYPE="audio/x-wav" RELATIVE_MEDIA_URL="./test_recording.wav"/>
+        <PROPERTY NAME="URN">urn:nl-mpi-tools-elan-eaf:2861272e-a8c2-49e6-9fb5-4578a221dd44</PROPERTY>
+        <PROPERTY NAME="lastUsedAnnotationId">7</PROPERTY>
+    </HEADER>
+    <TIME_ORDER>
+        <TIME_SLOT TIME_SLOT_ID="ts1" TIME_VALUE="340"/>
+        <TIME_SLOT TIME_SLOT_ID="ts2" TIME_VALUE="829"/>
+        <TIME_SLOT TIME_SLOT_ID="ts3" TIME_VALUE="1329"/>
+        <TIME_SLOT TIME_SLOT_ID="ts4" TIME_VALUE="2130"/>
+        <TIME_SLOT TIME_SLOT_ID="ts5" TIME_VALUE="2263"/>
+        <TIME_SLOT TIME_SLOT_ID="ts6" TIME_VALUE="4224"/>
+        <TIME_SLOT TIME_SLOT_ID="ts7" TIME_VALUE="4330"/>
+        <TIME_SLOT TIME_SLOT_ID="ts8" TIME_VALUE="4379"/>
+        <TIME_SLOT TIME_SLOT_ID="ts9" TIME_VALUE="6193"/>
+        <TIME_SLOT TIME_SLOT_ID="ts10" TIME_VALUE="6406"/>
+        <TIME_SLOT TIME_SLOT_ID="ts11" TIME_VALUE="6950"/>
+        <TIME_SLOT TIME_SLOT_ID="ts12" TIME_VALUE="7050"/>
+    </TIME_ORDER>
+    <TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="default"/>
+    <TIER LINGUISTIC_TYPE_REF="default-lt" PARTICIPANT="Myself" TIER_ID="creator">
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a1"
+                TIME_SLOT_REF1="ts2" TIME_SLOT_REF2="ts3">
+                <ANNOTATION_VALUE>Hello .</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a2"
+                TIME_SLOT_REF1="ts5" TIME_SLOT_REF2="ts6">
+                <ANNOTATION_VALUE>This is a test recording .</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a3"
+                TIME_SLOT_REF1="ts8" TIME_SLOT_REF2="ts9">
+                <ANNOTATION_VALUE>for the ELAN Data Object .</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a5"
+                TIME_SLOT_REF1="ts10" TIME_SLOT_REF2="ts11">
+                <ANNOTATION_VALUE/>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+    </TIER>
+    <TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="test_2">
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a6"
+                TIME_SLOT_REF1="ts4" TIME_SLOT_REF2="ts7">
+                <ANNOTATION_VALUE>This is a test recording</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+    </TIER>
+    <TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="THE FINAL TIER">
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a7"
+                TIME_SLOT_REF1="ts1" TIME_SLOT_REF2="ts12">
+                <ANNOTATION_VALUE>This segment spans over everything - Extraneous text and symbols too! (!@*()#$UV#)*ÑÑÑñññóÓö^**++]})</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+    </TIER>
+    <LINGUISTIC_TYPE GRAPHIC_REFERENCES="false"
+        LINGUISTIC_TYPE_ID="default-lt" TIME_ALIGNABLE="true"/>
+    <CONSTRAINT
+        DESCRIPTION="Time subdivision of parent annotation's time interval, no time gaps allowed within this interval" STEREOTYPE="Time_Subdivision"/>
+    <CONSTRAINT
+        DESCRIPTION="Symbolic subdivision of a parent annotation. Annotations refering to the same parent are ordered" STEREOTYPE="Symbolic_Subdivision"/>
+    <CONSTRAINT DESCRIPTION="1-1 association with a parent annotation" STEREOTYPE="Symbolic_Association"/>
+    <CONSTRAINT
+        DESCRIPTION="Time alignable annotations within the parent annotation's time interval, gaps are allowed" STEREOTYPE="Included_In"/>
 </ANNOTATION_DOCUMENT>

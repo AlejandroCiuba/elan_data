@@ -2,12 +2,16 @@
 from __future__ import annotations
 from elan_data import ELAN_Data
 from pathlib import Path
-from typing import Callable, Iterator, Optional, Union
+from typing import (Callable,
+                    Iterator,
+                    Optional,
+                    Union, )
 
 import contextlib
 import matplotlib.figure
 import matplotlib.axes
 import sys
+import typing
 import wave
 
 import matplotlib.pyplot as plt
@@ -47,17 +51,25 @@ def eaf_to_rttm(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
     """
 
     # Create the Elan_Data object from the file
+    eaf = None
     if isinstance(src, (str, Path)):
         eaf = ELAN_Data.from_file(src)
+    elif not isinstance(src, (ELAN_Data)):
+        raise TypeError("Incorrect type given")
+    
+    eaf = typing.cast(ELAN_Data, eaf)
 
     eaf.df_status = True
 
     with open(dst, "w+", encoding=encoding) as rttm:
+
+        name = eaf.file.name[:-4]
+
         for row in eaf.tier_data.itertuples():
             if row.TIER_ID not in filter:
                 fields = [
                     "SPEAKER",
-                    eaf.file.name[:-4],
+                    name,
                     "1",
                     f"{row.START * 10**-3:.6f}",
                     f"{row.DURATION * 10**-3:.6f}",

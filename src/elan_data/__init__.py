@@ -2,7 +2,12 @@
 # Created by Alejandro Ciuba, alc307@pitt.edu
 from __future__ import annotations
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Optional, Sequence, Union
+from typing import (Any,
+                    Iterable,
+                    Iterator,
+                    Optional,
+                    Sequence,
+                    Union, )
 
 import copy
 import pickle
