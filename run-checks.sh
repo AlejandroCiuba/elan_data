@@ -23,4 +23,4 @@ echo "===================== SOURCE ====================="
 
 mypy src
 flake8 src
-pytest --cov src --cov-report html:coverage_report/
+pytest -s --cov src --cov-report html:coverage_report/

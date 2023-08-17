@@ -11,7 +11,6 @@ import contextlib
 import matplotlib.figure
 import matplotlib.axes
 import sys
-import typing
 import wave
 
 import matplotlib.pyplot as plt
@@ -51,13 +50,12 @@ def eaf_to_rttm(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
     """
 
     # Create the Elan_Data object from the file
-    eaf = None
     if isinstance(src, (str, Path)):
         eaf = ELAN_Data.from_file(src)
     elif not isinstance(src, (ELAN_Data)):
         raise TypeError("Incorrect type given")
-    
-    eaf = typing.cast(ELAN_Data, eaf)
+    else:
+        eaf = src
 
     eaf.df_status = True
 

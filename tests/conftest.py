@@ -1,57 +1,30 @@
 # This file contains all test fixtures
 # Created by Alejandro Ciuba, alc307@pitt.edu
 from __future__ import annotations
+from elan_data import ELAN_Data
 from pathlib import Path
 from typing import (Optional,
-                    Union, )
+                    Generator, )
+from unittest import mock
 
 import pytest
 
 import pandas as pd
 import xml.etree.ElementTree as ET
 
-AUDIO = "./tests/test_recording.wav"
-EAF = "./tests/test.eaf"
+ELAN_DATA = "elan_data.ELAN_Data"
+ELAN_UTILS = "elan_data.elan_utils"
+TEST_DIR = "./tests"
+KEYS = f"{TEST_DIR}/keys"
+CREATED = f"{TEST_DIR}/created"
+AUDIO = f"{KEYS}/key.wav"
+EAF = f"{KEYS}/key.eaf"
+RTTM = f"{KEYS}/key.rttm"
 TIER_NAMES = ["default", "creator", "test_2", "THE FINAL TIER"]
-TIER_DATA = pd.DataFrame({'TIER_ID':       ["creator",
-                                            "creator",
-                                            "creator",
-                                            "creator",
-                                            "test_2",
-                                            "THE FINAL TIER", ],
-                          'START':         [829,
-                                            2263,
-                                            4379,
-                                            6406,
-                                            2130,
-                                            340, ],
-                          'STOP':          [1329,
-                                            4224,
-                                            6193,
-                                            6950,
-                                            4330,
-                                            7050, ],
-                          'DURATION':      [1329 - 829,
-                                            4224 - 2263,
-                                            6193 - 4379,
-                                            6950 - 6406,
-                                            4330 - 2130,
-                                            77050 - 340, ],
-                          'TEXT':          ["Hello .",
-                                            "This is a test recording .",
-                                            "for the ELAN Data Object .",
-                                            "",
-                                            "This is a test recording",
-                                            "This segment spans over everything - Extraneous text and symbols too! (!@*()#$UV#)*ÑÑÑñññóÓö^**++]})", ],
-                          'SEGMENT_ID':    ["a1",
-                                            "a2",
-                                            "a3",
-                                            "a5",
-                                            "a6",
-                                            "a7", ]})
+TIER_DATA = pd.read_csv(f"{KEYS}/key.csv")
 
 
-class MockElanData:
+class MockElan_Data:
     """
     Basic Mock object of Elan_Data providing the absolute basics for testing elan_utils.
 
@@ -62,11 +35,7 @@ class MockElanData:
     - Likewise with `xml.etree.ElementTree` (and its `ElementTree` object), `pathlib.Path`, and the built-in `list`.
     """
 
-    def __init__(self, file: Union[str, Path], init_df: bool = True) -> None:
-
-        # None of this is actually used, might be useful to see if methods/functions return the correct type however.
-        if not isinstance(file, (str, Path)):
-            raise TypeError("Incorrect type given")
+    def __init__(self, init_df: bool = True) -> None:
 
         with open(EAF, "r", encoding="UTF-8") as src:
             text = "\n".join(src.readlines(-1))
@@ -83,18 +52,34 @@ class MockElanData:
             self.tier_data = pd.DataFrame()
             self.df_status = False
 
-    def from_file(file: Union[str, Path], init_df: bool) -> MockElanData:
-        return MockElanData(file, init_df)
+    @staticmethod
+    def from_file(file: str, init_df: bool) -> ELAN_Data:
+
+        # None of this is actually used, might be useful to see if methods/functions return the correct type however.
+        if not isinstance(file, (str, Path)):
+            raise TypeError("Incorrect type given")
+
+        return ELAN_Data("PLACEHOLDER.eaf")
 
 
 @pytest.fixture()
-def mockelan() -> MockElanData:
-    return MockElanData(EAF)
+def mock_elan() -> Generator:
+    """
+    Mocks the properties and methods of the ELAN_Data object.
+    """
 
+    mock_data = MockElan_Data()
 
-@pytest.fixture()
-def mockelan_noinit() -> MockElanData:
-    return MockElanData(EAF, init_df=False)
+    # Mimic values
+    with mock.patch(f"{ELAN_DATA}", spec=True) as MockElan:
+        mock_ed = MockElan.return_value
+        mock_ed.file = mock_data.file
+        mock_ed.audio = mock_data.audio
+        mock_ed.tree = mock_data.tree
+        mock_ed.tier_names = mock_data.tier_names
+        mock_ed.tier_data = mock_data.tier_data
+
+        yield mock_ed
 
 
 @pytest.fixture()
@@ -102,7 +87,25 @@ def audio() -> Path:
     return Path(AUDIO)
 
 
+@pytest.fixture()
+def audio_str() -> str:
+    return AUDIO
+
+
+@pytest.fixture()
+def rttm() -> Path:
+    return Path(RTTM)
+
+
+@pytest.fixture()
+def created() -> Path:
+    """
+    Filepath to where created files are stored
+    """
+    return Path(CREATED)
+
+
 if __name__ == "__main__":
 
-    test_mock = MockElanData(EAF)
-    print(test_mock.tree)
+    test_mock = MockElan_Data()
+    print(test_mock.tier_data)
