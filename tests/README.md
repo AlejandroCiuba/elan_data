@@ -18,14 +18,17 @@ All of which can be downloaded through `pip install -r requirements-dev.txt`
 To run, use either `pytest [optional args]` or the premade `run-checks.sh` script in the main directory.
 ***
 ## Directory
+
 ### Folders
 - `created/`: Contains any files/folders created during the testing process. None of these *should* be necessary to run tests beforehand.
 - `keys/`: Contains the "answer key" files needed to compare outputs for various methods and functions.
+
 ### Files
 - `__init__.py`: Literally nothing, it's just sort of there.
 - `conftest.py`: Stores all fixtures needed to run test suites.
 - `old_tests.py`: Tests which were originally ran in the (deprecated) `if __name__ == "__main__"` statement in each module of the `elan_data` package. Kept for future reference.
 - `README.md`: This thing that you are reading now!
+
 #### Test Suites
 - `test_elan_data.py`: Test functionality in the main `elan_data` (`__init__.py`) module.
 - `test_elan_utils.py`: Test functionality in the `elan_data.elan_utils` module.
