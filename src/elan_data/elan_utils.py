@@ -36,7 +36,7 @@ def eaf_to_rttm(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
     file : `str` or `pathlib.Path`
         Filepath to the .eaf file.
 
-    save_as : `str`
+    dst : `str` or `pathlib.Path`
         Name and location of the created .rttm file.
 
     filter : `list[str]`

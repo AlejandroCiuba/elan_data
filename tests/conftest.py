@@ -20,6 +20,7 @@ CREATED = f"{TEST_DIR}/created"
 AUDIO = f"{KEYS}/key.wav"
 EAF = f"{KEYS}/key.eaf"
 RTTM = f"{KEYS}/key.rttm"
+RTTM_FILTERED = f"{KEYS}/key-filtered.rttm"
 TIER_NAMES = ["default", "creator", "test_2", "THE FINAL TIER"]
 TIER_DATA = pd.read_csv(f"{KEYS}/key.csv")
 
@@ -83,6 +84,16 @@ def mock_elan() -> Generator:
 
 
 @pytest.fixture()
+def eaf() -> Path:
+    return Path(EAF)
+
+
+@pytest.fixture()
+def eaf_str() -> str:
+    return EAF
+
+
+@pytest.fixture()
 def audio() -> Path:
     return Path(AUDIO)
 
@@ -98,11 +109,34 @@ def rttm() -> Path:
 
 
 @pytest.fixture()
+def rttm_str() -> str:
+    return RTTM
+
+
+@pytest.fixture()
+def rttm_filtered() -> Path:
+    return Path(RTTM_FILTERED)
+
+
+@pytest.fixture()
+def rttm_filtered_str() -> str:
+    return RTTM_FILTERED
+
+
+@pytest.fixture()
 def created() -> Path:
     """
     Filepath to where created files are stored
     """
     return Path(CREATED)
+
+
+@pytest.fixture()
+def created_str() -> str:
+    """
+    Filepath to where created files are stored
+    """
+    return CREATED
 
 
 if __name__ == "__main__":

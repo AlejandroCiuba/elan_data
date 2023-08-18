@@ -10,6 +10,7 @@ This subdirectory contains the entire test suite needed to more properly test th
 - `pytest>=7.4.0`
 - `pytest-cov>=4.1.0`
 - `pytest-mock>=3.11.1`
+- `pytest-lazy-fixture>=0.6.3`
 - `mypy>=1.4.1`
 
 All of which can be downloaded through `pip install -r requirements-dev.txt`
@@ -18,6 +19,7 @@ To run, use either `pytest [optional args]` or the premade `run-checks.sh` scrip
 ***
 ## Directory
 ### Folders
+- `created/`: Contains any files/folders created during the testing process. None of these *should* be necessary to run tests beforehand.
 - `keys/`: Contains the "answer key" files needed to compare outputs for various methods and functions.
 ### Files
 - `__init__.py`: Literally nothing, it's just sort of there.
