@@ -118,6 +118,10 @@ def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
     # Create the Elan_Data object from the file
     if isinstance(src, (str, Path)):
         eaf = ELAN_Data.from_file(src)
+    elif not isinstance(src, (ELAN_Data)):
+        raise TypeError("Incorrect type given")
+    else:
+        eaf = src
 
     eaf.df_status = True
 

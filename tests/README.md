@@ -26,6 +26,7 @@ To run, use either `pytest [optional args]` or the premade `run-checks.sh` scrip
 ### Files
 - `__init__.py`: Literally nothing, it's just sort of there.
 - `conftest.py`: Stores all fixtures needed to run test suites.
+- `helper.py`: Helper functions to be used across all test units.
 - `old_tests.py`: Tests which were originally ran in the (deprecated) `if __name__ == "__main__"` statement in each module of the `elan_data` package. Kept for future reference.
 - `README.md`: This thing that you are reading now!
 

@@ -12,17 +12,26 @@ import pytest
 import pandas as pd
 import xml.etree.ElementTree as ET
 
+# Package directories
 ELAN_DATA = "elan_data.ELAN_Data"
 ELAN_UTILS = "elan_data.elan_utils"
+
+# Test directories
 TEST_DIR = "./tests"
 KEYS = f"{TEST_DIR}/keys"
+
+# Keys
 CREATED = f"{TEST_DIR}/created"
 AUDIO = f"{KEYS}/key.wav"
 EAF = f"{KEYS}/key.eaf"
 RTTM = f"{KEYS}/key.rttm"
 RTTM_FILTERED = f"{KEYS}/key-filtered.rttm"
+TXT = f"{KEYS}/key.txt"
+TXT_FILTERED = f"{KEYS}/key-filtered.txt"
+
+# Keys - Mock data setup
 TIER_NAMES = ["default", "creator", "test_2", "THE FINAL TIER"]
-TIER_DATA = pd.read_csv(f"{KEYS}/key.csv")
+TIER_DATA = pd.read_csv(f"{KEYS}/key.csv", keep_default_na=False)
 
 
 class MockElan_Data:
@@ -124,6 +133,26 @@ def rttm_filtered_str() -> str:
 
 
 @pytest.fixture()
+def txt() -> Path:
+    return Path(TXT)
+
+
+@pytest.fixture()
+def txt_str() -> str:
+    return TXT
+
+
+@pytest.fixture()
+def txt_filtered() -> Path:
+    return Path(TXT_FILTERED)
+
+
+@pytest.fixture()
+def txt_filtered_str() -> str:
+    return TXT_FILTERED
+
+
+@pytest.fixture()
 def created() -> Path:
     """
     Filepath to where created files are stored
@@ -143,3 +172,4 @@ if __name__ == "__main__":
 
     test_mock = MockElan_Data()
     print(test_mock.tier_data)
+    print(test_mock.tier_data.info())

@@ -3,7 +3,8 @@
 from __future__ import annotations
 from elan_data import ELAN_Data
 from elan_data.elan_utils import (audio_loader,
-                                  eaf_to_rttm, )  # eaf_to_text, sound_wave
+                                  eaf_to_rttm,
+                                  eaf_to_text, )  # sound_wave
 from pathlib import Path
 from pytest_lazyfixture import lazy_fixture
 from typing import (Any,
@@ -13,6 +14,7 @@ from unittest import mock
 import pytest
 import wave
 
+import tests.helper as helper
 import numpy as np
 
 
@@ -85,7 +87,7 @@ class TestEAFToRTTM:
             raise TypeError("Unsupported dst type")
 
         eaf_to_rttm(src=src, dst=dst)
-        assert TestEAFToRTTM.compare_to_key(dst, rttm)
+        assert helper.compare_to_key(dst, rttm)
 
     @pytest.mark.parametrize("invalid_src", [np.array([1, 2, 3]), "fake_destination/place.rttm", "invalid.rttm"])
     def test_invalid_src(self, invalid_src: Any, created: Path) -> None:
@@ -114,29 +116,73 @@ class TestEAFToRTTM:
         dst = created / save_name
 
         eaf_to_rttm(mock_elan, dst, filter=["THE FINAL TIER"])
-        assert TestEAFToRTTM.compare_to_key(dst, rttm_filtered)
+        assert helper.compare_to_key(dst, rttm_filtered)
 
     def test_invalid_filter(self, mock_elan: ELAN_Data, created: Path, rttm: Path) -> None:
 
         # Should be the same as if no filter existed
-        save_name = "test_dst_filter.rttm"
+        save_name = "test_dst_invalid_filter.rttm"
         dst = created / save_name
 
         eaf_to_rttm(mock_elan, dst, filter=["dffault"])
-        assert TestEAFToRTTM.compare_to_key(dst, rttm)
-
-    @staticmethod
-    def compare_to_key(src: Union[str, Path], rttm: Path) -> bool:
-        """
-        Compare the created file to the key.rttm file.
-        """
-        with open(src, "r", encoding="UTF-8") as ans:
-            with open(rttm, "r", encoding="UTF-8") as key:
-                return not len(set(ans.readlines(-1)) & set(key.readlines(-1)))
+        assert helper.compare_to_key(dst, rttm)
 
 
 class TestEAFToText:
-    pass
+
+    @pytest.mark.parametrize("src", [lazy_fixture("mock_elan"), lazy_fixture("eaf"), lazy_fixture("eaf_str")])
+    @pytest.mark.parametrize("dst", [lazy_fixture("created"), lazy_fixture("created_str")])
+    def test_default_args(self, src: Union[ELAN_Data, str, Path], dst: Union[str, Path], txt: Path) -> None:
+
+        save_name = "test_dst.txt"
+
+        if isinstance(dst, str):
+            dst = dst + "/" + save_name
+        elif isinstance(dst, Path):
+            dst = dst / save_name
+        else:
+            raise TypeError("Unsupported dst type")
+
+        eaf_to_text(src=src, dst=dst)
+        assert helper.compare_to_key(dst, txt)
+
+    @pytest.mark.parametrize("invalid_src", [np.array([1, 2, 3]), "fake_destination/place.txt", "invalid.txt"])
+    def test_invalid_src(self, invalid_src: Any, created: Path) -> None:
+
+        save_name = "should-not-exist.txt"
+        dst = created / save_name
+
+        # We don't care how ELAN_Data.from_file() functions as long as it returns a FileNotFoundError when the file dne
+        # We are specifically testing to make sure no dst files get written if the src file dne and that we raise a TypeError
+        # on incorrect data types for src
+        with mock.patch("elan_data.ELAN_Data.from_file", side_effect=FileNotFoundError("mocked file dne")):
+            with pytest.raises((TypeError, FileNotFoundError)):
+                eaf_to_text(src=invalid_src, dst=dst)
+
+        assert not dst.exists()
+
+    @pytest.mark.parametrize("invalid_dst", [np.array([1, 2, 3]), "fake_destination/place.rttm"])
+    def test_invalid_dst(self, mock_elan: ELAN_Data, invalid_dst: Any) -> None:
+        with pytest.raises((TypeError, FileNotFoundError)):
+            eaf_to_text(src=mock_elan, dst=invalid_dst)
+
+    def test_valid_filter(self, mock_elan: ELAN_Data, created: Path, txt_filtered: Path) -> None:
+
+        # Specifically removing "THE FINAL TIER"
+        save_name = "test_dst_filter.txt"
+        dst = created / save_name
+
+        eaf_to_text(mock_elan, dst, filter=["THE FINAL TIER"])
+        assert helper.compare_to_key(dst, txt_filtered)
+
+    def test_invalid_filter(self, mock_elan: ELAN_Data, created: Path, txt: Path) -> None:
+
+        # Should be the same as if no filter existed
+        save_name = "test_dst_invalid_filter.txt"
+        dst = created / save_name
+
+        eaf_to_text(mock_elan, dst, filter=["dffault"])
+        assert helper.compare_to_key(dst, txt)
 
 
 class TestSoundWave:
