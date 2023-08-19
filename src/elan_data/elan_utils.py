@@ -216,11 +216,14 @@ def sound_wave(audio: Union[str, Path], start: float = 0, stop: float = -1,
     - `ValueError`: If the start time is greater than the audio duration.
     """
     # Error handling
-    if start >= stop and stop != -1:
+    if start < 0:
+        raise ValueError("Start time cannot be negative")
+    elif start >= stop and stop != -1:
         raise ValueError("Start time cannot be greater than stop time")
 
     # Get audio information
     with audio_loader(audio) as src:
+
         # So mypy won't be absolutely stupid
         assert isinstance(src, (wave.Wave_read))
 

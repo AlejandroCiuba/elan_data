@@ -28,6 +28,7 @@ RTTM = f"{KEYS}/key.rttm"
 RTTM_FILTERED = f"{KEYS}/key-filtered.rttm"
 TXT = f"{KEYS}/key.txt"
 TXT_FILTERED = f"{KEYS}/key-filtered.txt"
+TXT_FORMATTED = f"{KEYS}/key-formatted.txt"
 
 # Keys - Mock data setup
 TIER_NAMES = ["default", "creator", "test_2", "THE FINAL TIER"]
@@ -150,6 +151,16 @@ def txt_filtered() -> Path:
 @pytest.fixture()
 def txt_filtered_str() -> str:
     return TXT_FILTERED
+
+
+@pytest.fixture()
+def txt_formatted() -> Path:
+    return Path(TXT_FORMATTED)
+
+
+@pytest.fixture()
+def txt_formatted_str() -> str:
+    return TXT_FORMATTED
 
 
 @pytest.fixture()

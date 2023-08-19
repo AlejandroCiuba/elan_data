@@ -4,13 +4,18 @@ from __future__ import annotations
 from elan_data import ELAN_Data
 from elan_data.elan_utils import (audio_loader,
                                   eaf_to_rttm,
-                                  eaf_to_text, )  # sound_wave
+                                  eaf_to_text,
+                                  sound_wave, )
 from pathlib import Path
 from pytest_lazyfixture import lazy_fixture
 from typing import (Any,
+                    Callable,
+                    Generator,
                     Union, )
 from unittest import mock
 
+import matplotlib.figure
+import matplotlib.axes
 import pytest
 import wave
 
@@ -184,6 +189,61 @@ class TestEAFToText:
         eaf_to_text(mock_elan, dst, filter=["dffault"])
         assert helper.compare_to_key(dst, txt)
 
+    def test_valid_formatter(self, mock_elan: ELAN_Data, created: Path, txt_formatted: Path) -> None:
+
+        # Test if making new valid formatting functions works
+        # Valid formatters take in a row from pd.DataFrame.itertuples() and return a string
+        def new_formatter(row: Any) -> str:
+            if row.TEXT.strip() != "":
+                return f"{row.TIER_ID} {row.DURATION}: {row.TEXT.strip()}"
+            else:
+                return f"{row.TIER_ID} {row.DURATION}: *Silence.*"
+
+        save_name = "test_dst_valid_formatter.txt"
+        dst = created / save_name
+
+        eaf_to_text(mock_elan, dst, formatter=new_formatter)
+        assert helper.compare_to_key(dst, txt_formatted)
+
 
 class TestSoundWave:
-    pass
+
+    # Keep audio_loader testing separate completely
+    @pytest.fixture()
+    def setup(self, audio_str: str) -> Generator:
+        with mock.patch("elan_data.elan_utils.audio_loader", spec=True) as mock_loader:
+            mock_loader.return_value = wave.open(audio_str, "rb")
+            yield mock_loader
+
+    def test_default_args(self, setup: Callable[..., Any], audio: Path) -> None:
+        result = sound_wave(audio=audio)
+        assert isinstance(result, tuple)
+        assert isinstance(result[0], matplotlib.figure.Figure)
+        assert isinstance(result[1], matplotlib.axes.Axes)
+
+    # Audio duration: 7.12s
+    @pytest.mark.parametrize("start,stop", [(-200, 10), (10, 5), (-1, -1), (8, 10)])
+    def test_invalid_times(self, setup: Callable[..., Any], audio: Path, start: float, stop: float) -> None:
+        with pytest.raises(ValueError):
+            sound_wave(audio, start=start, stop=stop)
+
+    # Audio duration: 7.12s
+    @pytest.mark.parametrize("start,stop", [(0, 7.12), (2, 5), (0, -1), (3, 10_000)])
+    def test_valid_times(self, setup: Callable[..., Any], audio: Path, start: float, stop: float) -> None:
+        result = sound_wave(audio=audio, start=start, stop=stop)
+        assert isinstance(result, tuple)
+        assert isinstance(result[0], matplotlib.figure.Figure)
+        assert isinstance(result[1], matplotlib.axes.Axes)
+
+    def test_valid_kwargs(self, setup: Callable[..., Any], audio: Path) -> None:
+        result = sound_wave(audio=audio, red=1)
+        assert isinstance(result, tuple)
+        assert isinstance(result[0], matplotlib.figure.Figure)
+        assert isinstance(result[1], matplotlib.axes.Axes)
+
+    def test_invalid_kwargs(self, setup: Callable[..., Any], audio: Path) -> None:
+        # Same as if it was valid, but the color information doesn't apply
+        result = sound_wave(audio=audio, red=2)
+        assert isinstance(result, tuple)
+        assert isinstance(result[0], matplotlib.figure.Figure)
+        assert isinstance(result[1], matplotlib.axes.Axes)
