@@ -163,7 +163,7 @@ class ELAN_Data:
         return ed_obj
 
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path], audio: str, init_df: bool = False) -> ELAN_Data:
+    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path], audio: Optional[Union[str, Path]], init_df: bool = False) -> ELAN_Data:
         '''
         Initialize an ELAN_Data object based on a dataframe structured like a tiers dataframe (`ELAN_Data.tiers_data`).
 
@@ -193,6 +193,9 @@ class ELAN_Data:
         - `ValueError`: From `ELAN_Data.__init__()` method.
         '''
 
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError("DataFrame not given")
+
         ed_obj = cls(file)
 
         ed_obj.add_audio(audio)
@@ -203,6 +206,9 @@ class ELAN_Data:
 
         if init_df:
             ed_obj.init_dataframe()
+
+        # Reset the modified variable
+        ed_obj._modified = False
 
         return ed_obj
 
@@ -244,7 +250,7 @@ class ELAN_Data:
             ed_obj.remove_tiers(['default'])
 
         if tiers:
-            ed_obj.add_tiers(tiers)
+            ed_obj.add_tiers(tiers, False)
 
         if audio:
             ed_obj.add_audio(audio)
@@ -462,7 +468,7 @@ class ELAN_Data:
             Any metadata that should be included with the tier.
         '''
 
-        if not tier:
+        if not tier or tier in self._tier_names:
             return
 
         root = self.tree.getroot()
@@ -508,13 +514,16 @@ class ELAN_Data:
 
         for i, tier in enumerate(tiers):
 
-            t = ET.Element("TIER")
-            t.attrib["LINGUISTIC_TYPE_REF"] = "default-lt"
-            t.attrib["TIER_ID"] = tier
+            if tier not in self._tier_names:
 
-            root.insert(2 + pretiers + i, t)
+                t = ET.Element("TIER")
+                t.attrib["LINGUISTIC_TYPE_REF"] = "default-lt"
+                t.attrib["TIER_ID"] = tier
 
-        self._tier_names.extend(tiers)
+                root.insert(2 + pretiers + i, t)
+
+                # Have to append here to avoid double tiers
+                self._tier_names.append(tier)
 
         # Reinitialize dataframe
         self._modified = True
@@ -677,13 +686,15 @@ class ELAN_Data:
             return
 
         if isinstance(audio, str):
-            self.audio = Path(audio)
-        else:
-            self.audio = audio
+            if audio == "":
+                return
+            self.audio = Path(Path(audio).absolute().as_uri())
+        elif isinstance(audio, Path):
+            self.audio = Path(audio.absolute().as_uri())
 
         a = ET.Element('MEDIA_DESCRIPTOR')
 
-        a.attrib["MEDIA_URL"] = self.audio.absolute().as_uri() if not place_holder else f"file://{audio}"
+        a.attrib["MEDIA_URL"] = self.audio.absolute().as_uri() if not place_holder else f"file:/{audio}"
         a.attrib["MIME_TYPE"] = "audio/x-wav"
 
         parent = self.tree.find("HEADER")

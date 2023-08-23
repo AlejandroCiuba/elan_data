@@ -87,20 +87,20 @@
         <Long>0</Long>
     </pref>
     <pref key="MediaTime">
-        <Long>7029</Long>
+        <Long>-1</Long>
     </pref>
     <prefGroup key="TierColors">
         <pref key="THE FINAL TIER">
             <Object class="java.awt.Color">0,160,0</Object>
         </pref>
-        <pref key="test_2">
-            <Object class="java.awt.Color">90,0,160</Object>
+        <pref key="creator">
+            <Object class="java.awt.Color">0,0,90</Object>
         </pref>
         <pref key="default">
             <Object class="java.awt.Color">0,90,90</Object>
         </pref>
-        <pref key="creator">
-            <Object class="java.awt.Color">0,0,90</Object>
+        <pref key="test_2">
+            <Object class="java.awt.Color">90,0,160</Object>
         </pref>
     </prefGroup>
     <prefList key="MultiTierViewer.TierOrder">
