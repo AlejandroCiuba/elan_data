@@ -9,6 +9,7 @@ from unittest import mock
 
 import pytest
 
+import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as ET
 
@@ -19,9 +20,9 @@ ELAN_UTILS = "elan_data.elan_utils"
 # Test directories
 TEST_DIR = "./tests"
 KEYS = f"{TEST_DIR}/keys"
+CREATED = f"{TEST_DIR}/created"
 
 # Keys
-CREATED = f"{TEST_DIR}/created"
 AUDIO = f"{KEYS}/key.wav"
 EAF = f"{KEYS}/key.eaf"
 RTTM = f"{KEYS}/key.rttm"
@@ -32,7 +33,48 @@ TXT_FORMATTED = f"{KEYS}/key-formatted.txt"
 
 # Keys - Mock data setup
 TIER_NAMES = ["default", "creator", "test_2", "THE FINAL TIER"]
-TIER_DATA = pd.read_csv(f"{KEYS}/key.csv", keep_default_na=False)
+TIER_DATA = pd.read_csv(f"{KEYS}/key.csv", keep_default_na=False).astype({'START': np.int32,
+                                                                          'STOP': np.int32,
+                                                                          'SEGMENT_ID': str,
+                                                                          'TIER_ID': 'category',
+                                                                          'TEXT': str,
+                                                                          'DURATION': np.int32, })
+
+# Proper default encoding
+ELAN_ENCODING = "UTF-8"
+
+# Minimum amount needed for an ELAN_Data file
+MINIMUM_ELAN = \
+'''
+<?xml version="1.0" encoding="UTF-8"?>
+<ANNOTATION_DOCUMENT AUTHOR="" DATE=""
+    FORMAT="3.0" VERSION="3.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv3.0.xsd">
+    <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">
+    </HEADER>
+    <TIME_ORDER/>
+    <TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="default"/>
+    <LINGUISTIC_TYPE GRAPHIC_REFERENCES="false"
+        LINGUISTIC_TYPE_ID="default-lt" TIME_ALIGNABLE="true"/>
+    <CONSTRAINT
+        DESCRIPTION="Time subdivision of parent annotation's time interval, no time gaps allowed within this interval" STEREOTYPE="Time_Subdivision"/>
+    <CONSTRAINT
+        DESCRIPTION="Symbolic subdivision of a parent annotation. Annotations refering to the same parent are ordered" STEREOTYPE="Symbolic_Subdivision"/>
+    <CONSTRAINT DESCRIPTION="1-1 association with a parent annotation" STEREOTYPE="Symbolic_Association"/>
+    <CONSTRAINT
+        DESCRIPTION="Time alignable annotations within the parent annotation's time interval, gaps are allowed" STEREOTYPE="Included_In"/>
+</ANNOTATION_DOCUMENT>
+'''  # noqa: E122
+
+# Placeholder name for certain tests
+NEW_EAF = "new.eaf"
+DEFAULT_TIER_LIST = ["default"]
+DEFAULT_TIER_DATA = pd.DataFrame({'TIER_ID':       [],
+                                  'START':         [],
+                                  'STOP':          [],
+                                  'TEXT':          [],
+                                  'SEGMENT_ID':    [],
+                                  'DURATION':      [], })
 
 
 class MockElan_Data:
@@ -91,6 +133,17 @@ def mock_elan() -> Generator:
         mock_ed.tier_data = mock_data.tier_data
 
         yield mock_ed
+
+
+@pytest.fixture()
+def mock_data() -> MockElan_Data:
+    return MockElan_Data()
+
+
+@pytest.fixture()
+def tree() -> ET.ElementTree:
+    mock = MockElan_Data()
+    return mock.tree
 
 
 @pytest.fixture()
@@ -177,6 +230,51 @@ def created_str() -> str:
     Filepath to where created files are stored
     """
     return CREATED
+
+
+@pytest.fixture()
+def tier_names() -> list[str]:
+    return TIER_NAMES
+
+
+@pytest.fixture()
+def tier_data() -> pd.DataFrame:
+    return TIER_DATA
+
+
+@pytest.fixture()
+def encoding() -> str:
+    return ELAN_ENCODING
+
+
+@pytest.fixture()
+def minimum_elan_str() -> str:
+    return MINIMUM_ELAN
+
+
+@pytest.fixture()
+def minimum_elan() -> ET.ElementTree:
+    return ET.ElementTree(ET.fromstring(MINIMUM_ELAN.strip()))
+
+
+@pytest.fixture()
+def placeholder() -> Path:
+    return Path(NEW_EAF)
+
+
+@pytest.fixture()
+def placeholder_str() -> str:
+    return NEW_EAF
+
+
+@pytest.fixture()
+def default_tier_list() -> list[str]:
+    return DEFAULT_TIER_LIST
+
+
+@pytest.fixture()
+def default_tier_data() -> pd.DataFrame:
+    return DEFAULT_TIER_DATA
 
 
 if __name__ == "__main__":

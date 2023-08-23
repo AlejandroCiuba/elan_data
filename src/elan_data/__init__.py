@@ -81,13 +81,14 @@ class ELAN_Data:
         - `ValueError`: If no file was given (either `None` or an empty string).
         '''
 
-        if not file or str(file) == "":
-            raise ValueError("No file given")
-
         if isinstance(file, str):
+            if file == "":
+                raise ValueError("No file given")
             file = Path(file)
+        elif not isinstance(file, Path):
+            raise TypeError("Invalid file type given")
 
-        self.__modified: bool = False
+        self._modified: bool = False
 
         self.file: Path = file
 
@@ -95,14 +96,19 @@ class ELAN_Data:
         self.tree: ET.ElementTree = ET.ElementTree(ET.fromstring(MINIMUM_ELAN.strip()))
 
         # tier names; default might still be there
-        self.__tier_names: list[str] = [element.attrib['TIER_ID'] for element in self.tree.findall(".//TIER")]
+        self._tier_names: list[str] = [element.attrib['TIER_ID'] for element in self.tree.findall(".//TIER")]
 
         # Audio file path
         self.audio: Optional[Path] = None
 
         # Separate the dataframe init process
-        self.tier_data: pd.DataFrame = pd.DataFrame()
-        self.__init_data: bool = False
+        self.tier_data: pd.DataFrame = pd.DataFrame({'TIER_ID':       [],
+                                                     'START':         [],
+                                                     'STOP':          [],
+                                                     'TEXT':          [],
+                                                     'SEGMENT_ID':    [],
+                                                     'DURATION':      [], })
+        self._init_data: bool = False
 
         if init_df:
             self.tier_data = self.init_dataframe()
@@ -139,7 +145,7 @@ class ELAN_Data:
             ed_obj.tree = ET.parse(src)
 
         # Extract all tier names
-        ed_obj.__tier_names = [element.attrib['TIER_ID'] for element in ed_obj.tree.findall(".//TIER")]
+        ed_obj._tier_names = [element.attrib['TIER_ID'] for element in ed_obj.tree.findall(".//TIER")]
 
         # Separate the audio loading process, assumes local storage
         descriptor = ed_obj.tree.find(".//*[@MIME_TYPE]")
@@ -149,7 +155,7 @@ class ELAN_Data:
         ed_obj.audio = Path(descriptor.attrib["MEDIA_URL"])
 
         # Separate the dataframe init process
-        ed_obj.__init_data = False
+        ed_obj._init_data = False
 
         if init_df:
             ed_obj.tier_data = ed_obj.init_dataframe()
@@ -243,7 +249,7 @@ class ELAN_Data:
         if audio:
             ed_obj.add_audio(audio)
 
-        ed_obj.__modified = False
+        ed_obj._modified = False
 
         return ed_obj
 
@@ -288,14 +294,14 @@ class ELAN_Data:
         '''  # noqa: W605
 
         # Create a dataframe containing: TIER_ID, START, STOP, DURATION, TEXT, SEGMENT_ID for all TIER_ID
-        self.tier_data = {'TIER_ID':       [],
-                          'START':         [],
-                          'STOP':          [],
-                          # 'DURATION':      [], Created later
-                          'TEXT':          [],
-                          'SEGMENT_ID':    []}
+        tier_data = {'TIER_ID':       [],
+                     'START':         [],
+                     'STOP':          [],
+                     # 'DURATION':      [], Created later
+                     'TEXT':          [],
+                     'SEGMENT_ID':    []}
 
-        for tier in self.__tier_names:
+        for tier in self._tier_names:
 
             # Search for the information we'll need to extract necessary data from the XML tree
             search = f".//*[@TIER_ID='{tier}']//ALIGNABLE_ANNOTATION"
@@ -303,8 +309,8 @@ class ELAN_Data:
 
             td = [self.tree.find(f".//*[@TIME_SLOT_ID='{element['TIME_SLOT_REF1']}']").attrib['TIME_VALUE'] for element in aligns]
 
-            self.tier_data['START'].extend(td)
-            self.tier_data['STOP'].extend([self.tree.find(f".//*[@TIME_SLOT_ID='{element['TIME_SLOT_REF2']}']").attrib['TIME_VALUE'] for element in aligns])
+            tier_data['START'].extend(td)
+            tier_data['STOP'].extend([self.tree.find(f".//*[@TIME_SLOT_ID='{element['TIME_SLOT_REF2']}']").attrib['TIME_VALUE'] for element in aligns])
 
             # Special case, text: could be none causing misalignment in dataframe
             # Honestly, it's a really stupid way of doing this but:
@@ -314,15 +320,14 @@ class ELAN_Data:
             text = [''] * len(td)
 
             for ind, line in enumerate([self.tree.find(f".//*[@TIER_ID='{tier}']//*[@ANNOTATION_ID='{element['ANNOTATION_ID']}']/ANNOTATION_VALUE").text for element in aligns]):
-
                 if line:
                     text[ind] = line
 
-            self.tier_data['TEXT'].extend(text)
-            self.tier_data['SEGMENT_ID'].extend([element['ANNOTATION_ID'] for element in aligns])
-            self.tier_data['TIER_ID'].extend([tier] * len(td))
+            tier_data['TEXT'].extend(text)
+            tier_data['SEGMENT_ID'].extend([element['ANNOTATION_ID'] for element in aligns])
+            tier_data['TIER_ID'].extend([tier] * len(td))
 
-        self.tier_data = pd.DataFrame(self.tier_data)
+        self.tier_data = pd.DataFrame(tier_data)
 
         # Perform the data manipulations
         self.tier_data = self.tier_data.astype({'START': np.int32,
@@ -335,7 +340,7 @@ class ELAN_Data:
         self.tier_data['DURATION'] = (self.tier_data.STOP - self.tier_data.START).astype(dtype=np.int32)
 
         # Set self.init_data to true
-        self.__init_data = True
+        self._init_data = True
 
         return self.tier_data
 
@@ -343,7 +348,7 @@ class ELAN_Data:
     def __repr__(self) -> str:
         return \
         textwrap.dedent(f'''\
-        {type(self).__name__}({self.tree!r}, {self.tier_data!r}, {self.__tier_names!r}, {self.file!r}, {self.audio!r}, {self.__init_data!r}, {self.__modified!r})
+        {type(self).__name__}({self.tree!r}, {self.tier_data!r}, {self._tier_names!r}, {self.file!r}, {self.audio!r}, {self._init_data!r}, {self._modified!r})
         ''')  # noqa: E122
 
     def __str__(self) -> str:
@@ -351,11 +356,11 @@ class ELAN_Data:
         textwrap.dedent(f'''\
         name: {self.file.name}
         located at: {self.file.absolute()}
-        tiers: {", ".join(self.__tier_names)}
+        tiers: {", ".join(self._tier_names)}
         associated audio file: {"None" if not self.audio else self.audio.name}
         associated audio location: {"None" if not self.audio else self.audio.absolute()}
-        dataframe init: {str(self.__init_data)}
-        modified: {str(self.__modified)}
+        dataframe init: {str(self._init_data)}
+        modified: {str(self._modified)}
         ''')  # noqa: E122
 
     # Using these methods auto-(re)initializes the DataFrame
@@ -363,7 +368,7 @@ class ELAN_Data:
         return len(self.init_dataframe())
 
     def __contains__(self, item: str) -> bool:
-        return item in self.__tier_names
+        return item in self._tier_names
 
     def __iter__(self) -> Iterator[tuple[Any, pd.Series]]:
         return self.init_dataframe().iterrows()
@@ -378,14 +383,14 @@ class ELAN_Data:
         other.df_status = True
 
         return self.file == other.file and self.audio == other.audio \
-            and self.__tier_names == other.tier_names and self.tier_data == other.tier_data \
-            and self.tree == other.tree and self.__modified == other.modified
+            and self._tier_names == other.tier_names and self.tier_data == other.tier_data \
+            and self.tree == other.tree and self._modified == other.modified
 
 # ===================== FIELDS =====================
 
     @property
     def tier_names(self) -> list[str]:
-        return self.__tier_names
+        return self._tier_names
 
     @property
     def df_status(self) -> bool:
@@ -394,12 +399,12 @@ class ELAN_Data:
 
         Setting this to `True` will automatically update the DataFrame.
         '''
-        return self.__init_data
+        return self._init_data
 
     @df_status.setter
     def df_status(self, init_df: bool):
 
-        self.__init_data = init_df
+        self._init_data = init_df
 
         if init_df:
             self.init_dataframe()
@@ -409,7 +414,7 @@ class ELAN_Data:
         '''
         Has this ELAN_Data object been altered since it was first loaded?
         '''
-        return self.__modified
+        return self._modified
 
 # ===================== ACCESSORS =====================
 
@@ -463,7 +468,7 @@ class ELAN_Data:
         root = self.tree.getroot()
 
         # Define and insert TIER subelement
-        pretiers = len(self.__tier_names)
+        pretiers = len(self._tier_names)
 
         t = ET.Element("TIER")
         t.attrib["LINGUISTIC_TYPE_REF"] = "default-lt"
@@ -474,9 +479,9 @@ class ELAN_Data:
 
         root.insert(2 + pretiers, t)
 
-        self.__tier_names.append(tier)
+        self._tier_names.append(tier)
 
-        self.__modified = True
+        self._modified = True
         self.df_status = init_df
 
     def add_tiers(self, tiers: Optional[Sequence[str]], init_df: bool = True):
@@ -499,7 +504,7 @@ class ELAN_Data:
         root = self.tree.getroot()
 
         # Define and insert TIER subelement
-        pretiers = len(self.__tier_names)
+        pretiers = len(self._tier_names)
 
         for i, tier in enumerate(tiers):
 
@@ -509,10 +514,10 @@ class ELAN_Data:
 
             root.insert(2 + pretiers + i, t)
 
-        self.__tier_names.extend(tiers)
+        self._tier_names.extend(tiers)
 
         # Reinitialize dataframe
-        self.__modified = True
+        self._modified = True
         self.df_status = init_df
 
     def rename_tier(self, tier: Optional[str], name: Optional[str] = None, init_df: bool = True):
@@ -532,7 +537,7 @@ class ELAN_Data:
             Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `True`.
         '''
 
-        if not (tier and name and tier in self.__tier_names):
+        if not (tier and name and tier in self._tier_names):
             return
 
         t = self.tree.getroot().find(f".//*[@TIER_ID='{tier}']")
@@ -540,10 +545,10 @@ class ELAN_Data:
 
         t.attrib['TIER_ID'] = name
 
-        self.__tier_names.remove(tier)
-        self.__tier_names.append(name)
+        self._tier_names.remove(tier)
+        self._tier_names.append(name)
 
-        self.__modified = True
+        self._modified = True
         self.df_status = init_df
 
     def remove_tiers(self, tiers: Optional[Sequence[str]], init_df: bool = True):
@@ -568,11 +573,11 @@ class ELAN_Data:
         for tier in root.findall("TIER"):
             if tier.attrib["TIER_ID"] in tiers:
                 root.remove(tier)
-                self.__modified = True
+                self._modified = True
 
-        self.__tier_names = list(set(self.tier_names) - set(tiers))
+        self._tier_names = list(set(self.tier_names) - set(tiers))
 
-        self.__modified = True
+        self._modified = True
         self.df_status = init_df
 
     def add_participant(self, tier: Optional[str], participant: Optional[str]):
@@ -592,7 +597,7 @@ class ELAN_Data:
         if not tier or not participant:
             return
 
-        if tier not in self.__tier_names:
+        if tier not in self._tier_names:
             return
 
         t = self.tree.getroot().find(f".//*[@TIER_ID='{tier}']")
@@ -601,7 +606,7 @@ class ELAN_Data:
 
         t.attrib["PARTICIPANT"] = participant
 
-        self.__modified = True
+        self._modified = True
 
     def add_tier_metadata(self, tier: Optional[str], init_df: bool = False, **kwargs):
         '''
@@ -620,7 +625,7 @@ class ELAN_Data:
             Attribute name(s) and value(s); all strings.
         '''
 
-        if not tier or tier not in self.__tier_names:
+        if not tier or tier not in self._tier_names:
             return
 
         t = self.tree.getroot().find(f".//*[@TIER_ID='{tier}']")
@@ -628,7 +633,7 @@ class ELAN_Data:
 
         t.attrib = {**(t.attrib), **kwargs}
 
-        self.__modified = True
+        self._modified = True
         self.df_status = init_df
 
     def add_metadata(self, author: str = "", date: str = ""):
@@ -692,7 +697,7 @@ class ELAN_Data:
 
         parent.insert(0, a)
 
-        self.__modified = True
+        self._modified = True
 
     def add_segment(self, tier: str, start: Union[int, str] = 0, stop: Union[int, str] = 100,
                     annotation: Optional[str] = "", init_df: bool = True):
@@ -735,7 +740,7 @@ class ELAN_Data:
         if int(start) < 0 or int(start) > int(stop):
             raise ValueError("Start must be 0 or greater and less than stop")
 
-        if tier not in self.__tier_names:
+        if tier not in self._tier_names:
             self.add_tiers([tier], False)
 
         # I need to manually cast them to the correct type because
@@ -810,7 +815,7 @@ class ELAN_Data:
             align.attrib["TIME_SLOT_REF2"] = f"ts{sb_ts+1}"
             t.append(annot)
 
-        self.__modified = True
+        self._modified = True
         self.df_status = init_df
 
     def split_segment(self, splits: Optional[list[int]], seg_id: str):
@@ -897,7 +902,7 @@ class ELAN_Data:
 
         if not tier:
             return
-        elif tier not in self.__tier_names:
+        elif tier not in self._tier_names:
             return
 
         if not seg_ids:
@@ -919,7 +924,7 @@ class ELAN_Data:
         for seg_id in seg_ids:
             self.remove_segment(seg_id, False)
 
-        # Will also update self.__modified
+        # Will also update self._modified
         # Guaranteed to be str due to earlier guard
         self.add_segment(typing.cast(str, tier), start, stop, text, init_df)
 
@@ -948,7 +953,7 @@ class ELAN_Data:
 
         typing.cast(ET.Element, self.tree.getroot().find(f".//*[@ANNOTATION_ID='{seg_id}']/../..")).remove(rem)
 
-        self.__modified = True
+        self._modified = True
         self.df_status = init_df
 
     def overlaps(self, seg_id: Optional[str], tiers: Optional[Iterable[str]], suprasegments: bool = True) -> pd.DataFrame:
@@ -1029,8 +1034,7 @@ class ELAN_Data:
         '''
 
         eaf = copy.deepcopy(self)
-        eaf.__init_data = True
-        eaf.__modified = False
+        eaf._modified = False
 
         return eaf
 
@@ -1106,6 +1110,6 @@ class ELAN_Data:
 
         self.tree.write(str(self.file.absolute()), encoding=_ELAN_ENCODING, xml_declaration=True)
 
-    @staticmethod
-    def __version__() -> str:
-        return f"version {VERSION:.1f}"
+
+def __version__() -> str:
+    return f"version {VERSION}"

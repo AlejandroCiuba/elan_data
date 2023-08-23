@@ -4,8 +4,8 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv3.0.xsd">
     <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">
         <MEDIA_DESCRIPTOR
-            MEDIA_URL="file:///home/computer_cat/Programs/Python_Programs/elan_data/tests/test_recording.wav"
-            MIME_TYPE="audio/x-wav" RELATIVE_MEDIA_URL="./test_recording.wav"/>
+            MEDIA_URL="file:///home/computer_cat/Documents/Programs/Python_Programs/elan_data/tests/keys/key.wav"
+            MIME_TYPE="audio/x-wav" RELATIVE_MEDIA_URL="./key.wav"/>
         <PROPERTY NAME="URN">urn:nl-mpi-tools-elan-eaf:2861272e-a8c2-49e6-9fb5-4578a221dd44</PROPERTY>
         <PROPERTY NAME="lastUsedAnnotationId">7</PROPERTY>
     </HEADER>
