@@ -88,8 +88,6 @@ class ELAN_Data:
         elif not isinstance(file, Path):
             raise TypeError("Invalid file type given")
 
-        self._modified: bool = False
-
         self.file: Path = file
 
         # Parse the XML
@@ -112,6 +110,8 @@ class ELAN_Data:
 
         if init_df:
             self.tier_data = self.init_dataframe()
+
+        self._modified: bool = False
 
     @classmethod
     def from_file(cls, file: Union[str, Path], init_df: bool = False) -> ELAN_Data:
@@ -159,6 +159,8 @@ class ELAN_Data:
 
         if init_df:
             ed_obj.tier_data = ed_obj.init_dataframe()
+
+        ed_obj._modified = False
 
         return ed_obj
 
@@ -345,7 +347,11 @@ class ELAN_Data:
         # Lastly, add DURATION
         self.tier_data['DURATION'] = (self.tier_data.STOP - self.tier_data.START).astype(dtype=np.int32)
 
-        # Set self.init_data to true
+        # If self._init_data is False, doing this modifies the object
+        # We must assure that other methods which call this in their init process reset this to False
+        self._modified = True
+
+        # Set self._init_data to true
         self._init_data = True
 
         return self.tier_data
@@ -369,15 +375,14 @@ class ELAN_Data:
         modified: {str(self._modified)}
         ''')  # noqa: E122
 
-    # Using these methods auto-(re)initializes the DataFrame
     def __len__(self) -> int:
-        return len(self.init_dataframe())
+        return len(self.tier_data)
 
     def __contains__(self, item: str) -> bool:
         return item in self._tier_names
 
-    def __iter__(self) -> Iterator[tuple[Any, pd.Series]]:
-        return self.init_dataframe().iterrows()
+    def __iter__(self) -> Iterator[Any]:
+        return self.tier_data.itertuples()
 
     @typing.no_type_check
     def __eq__(self, other: object) -> bool:
@@ -389,7 +394,7 @@ class ELAN_Data:
         other.df_status = True
 
         return self.file == other.file and self.audio == other.audio \
-            and self._tier_names == other.tier_names and self.tier_data == other.tier_data \
+            and self._tier_names == other.tier_names and self.tier_data.equals(other.tier_data) \
             and self.tree == other.tree and self._modified == other.modified
 
 # ===================== FIELDS =====================
@@ -418,13 +423,13 @@ class ELAN_Data:
     @property
     def modified(self) -> bool:
         '''
-        Has this ELAN_Data object been altered since it was first loaded?
+        Has this ELAN_Data object been altered since it was first created?
         '''
         return self._modified
 
 # ===================== ACCESSORS =====================
 
-    def get_segment(self, seg_id: str = "a1") -> str | None:
+    def get_segment(self, seg_id: str = "a1") -> Optional[str]:
         '''
         Find the given segment based on the segment ID.
 
@@ -487,6 +492,8 @@ class ELAN_Data:
 
         self._tier_names.append(tier)
 
+        # While self.init_dataframe() would set self.modified to True
+        # there is no guarantee that they will have init_df = True
         self._modified = True
         self.df_status = init_df
 

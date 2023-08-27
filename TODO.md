@@ -10,6 +10,8 @@ List of planned additions or interesting things that could be added in the futur
     - `elan_utils.audio_loader` and `elan_utils.sound_wave` will also take `ELAN_Data` and use its audio and filename.
         - Raises `TypeError` if either audio or filename do not exist.
 
+    - Make `df_status = False` wipe the current `ELAN_Data.tier_data` `pd.DataFrame`.
+
 ## Long-Term
 
 - Separate the `elan_data.ELAN_Data.tier_data` logic into its own class, `elan_data.Tier_Data` which inherits from `pd.DataFrame`.

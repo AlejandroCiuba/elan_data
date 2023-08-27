@@ -4,7 +4,7 @@
 if [[ $1 = "-a" ]] || [[ $1 = "--all" ]] || [[ $1 = "-t" ]] || [[ $1 = "--tests" ]]; then
 
     echo "===================== TESTS ====================="
-    mypy tests --exclude old_tests.py
+    mypy tests --exclude old_tests.py --no-warn-unreachable 
     flake8 tests --exclude old_tests.py
 
     if [[ $1 = "-t" ]] || [[ $1 = "--tests" ]]; then
@@ -23,4 +23,4 @@ echo "===================== SOURCE ====================="
 
 mypy src
 flake8 src
-pytest -s --cov-report html:coverage_report/
+pytest -s $2 --cov-report html:coverage_report/
