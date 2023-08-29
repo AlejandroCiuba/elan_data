@@ -275,7 +275,7 @@ class TestElan_Data:
         for tier in tier_names:
             assert tier in setup_file
 
-        fake = ["boble", "bingus", "test", "dfault"]
+        fake = ["boble", "boo", "test", "dfault"]
 
         for tier in fake:
             assert tier not in setup_file
@@ -332,7 +332,9 @@ class TestElan_Data:
 
     # ===================== TEST MUTATORS =====================
 
-    def test_add_tier_default_params(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+    # add_tier(self, tier: Optional[str], init_df: bool = True, **kwargs)
+
+    def test_add_tier_default_params(self, setup_file: ELAN_Data) -> None:
 
         new_tier = "new_tier"
         setup_file.add_tier(tier=new_tier)
@@ -349,8 +351,129 @@ class TestElan_Data:
         assert setup_file.modified is False
 
         for tier in tier_names:
+
             setup_file.add_tier(tier=tier)
             assert setup_file.modified is False
+
+        assert len(setup_file.tier_names) == len(tier_names)
+
+    def test_add_tier_kwargs(self, setup_new: ELAN_Data) -> None:
+
+        new_tier = "new_tier"
+        participant = "me"
+
+        setup_new.add_tier(tier=new_tier, PARTICIPANT=participant)
+
+        tier = setup_new.tree.find(f".//*[@PARTICIPANT='{participant}']")
+
+        assert tier is not None
+        assert tier.attrib["PARTICIPANT"] == participant
+        assert setup_new.modified is True
+
+    # add_tiers(self, tiers: Optional[Sequence[str]], init_df: bool = True)
+
+    def test_add_tiers_default_params(self, setup_file: ELAN_Data) -> None:
+
+        new_tiers = ["new_tier", "new_tier_2", "new_tier_3"]
+        setup_file.add_tiers(tiers=new_tiers)
+
+        for tier in new_tiers:
+            assert tier in setup_file.tier_names
+
+        assert setup_file.modified is True
+
+    def test_add_tiers_not_modified(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+
+        # Should not modify if tier=None
+        # Should not modify if tier is in the tier_names
+        setup_file.add_tiers(tiers=None)
+
+        assert setup_file.modified is False
+
+        setup_file.add_tiers(tiers=tier_names)
+
+        assert len(setup_file.tier_names) == len(tier_names)
+        assert setup_file.modified is False
+
+    # rename_tier(self, tier: Optional[str], name: Optional[str] = None, init_df: bool = True)
+
+    def test_rename_tier_default_params(self, setup_new: ELAN_Data, tier_names: list[str]) -> None:
+
+        new_name = "non-default"
+
+        setup_new.rename_tier(tier='default', name=new_name)
+
+        assert new_name in setup_new.tier_names
+        assert 'default' not in setup_new.tier_names
+        assert setup_new.modified is True
+
+    def test_rename_tier_not_modified(self, setup_new: ELAN_Data, tier_names: list[str]) -> None:
+
+        # Either tier and/or name are none or tier does not exist
+
+        new_name = "non-default"
+
+        setup_new.rename_tier(tier=None, name=new_name)
+        assert setup_new.modified is False
+
+        setup_new.rename_tier(tier='default', name=None)
+        assert setup_new.modified is False
+
+        setup_new.rename_tier(tier=None, name=None)
+        assert setup_new.modified is False
+
+        setup_new.rename_tier(tier='outside', name='inside')
+        assert setup_new.modified is False
+
+    # remove_tiers(self, tiers: Optional[Sequence[str]], init_df: bool = True)
+
+    def test_remove_tiers_default_params(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+
+        for tier in tier_names:
+
+            setup_file.remove_tiers(tiers=[tier])
+
+            assert tier not in setup_file.tier_names
+            assert len(setup_file.tier_names) < len(tier_names)
+            assert setup_file.tree.find(f".//*[@TIER_ID='{tier}']") is None
+
+        assert setup_file.modified is True
+
+    def test_remove_tiers_not_modified(self, setup_file: ELAN_Data) -> None:
+
+        # Not modified if tiers=None or no tiers belong to the list
+        setup_file.remove_tiers(tiers=None)
+        assert setup_file.modified is False
+
+        fake_tier_list = ["fake", "another_fake"]
+
+        setup_file.remove_tiers(tiers=fake_tier_list)
+        assert setup_file.modified is False
+
+    # add_participant(self, tier: Optional[str], participant: Optional[str])
+
+    def test_add_participant_default_params(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+
+        participant = "I'm the new guy"
+        setup_file.add_participant(tier=tier_names[0], participant=participant)
+
+        tier = setup_file.tree.find(f".//*[@TIER_ID='{tier_names[0]}']")
+
+        assert tier is not None
+        assert tier.attrib["PARTICIPANT"] == participant
+        assert setup_file.modified is True
+
+    def test_add_participant_not_modified(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+
+        # Not modified if the tier does not exist or tier/participant is None
+        setup_file.add_participant(tier=None, participant="me")
+        assert setup_file.modified is False
+
+        setup_file.add_participant(tier=tier_names[0], participant=None)
+        assert setup_file.modified is False
+
+        setup_file.add_participant(tier="The Cool Tier", participant="me")
+        assert setup_file.modified is False
 
 
 class TestMisc:

@@ -532,9 +532,12 @@ class ELAN_Data:
                 # Have to append here to avoid double tiers
                 self._tier_names.append(tier)
 
-        # Reinitialize dataframe
-        self._modified = True
-        self.df_status = init_df
+                # Even if only one tier is new, it's modified
+                self._modified = True
+
+        # Reinitialize dataframe only if we modified it
+        if self._modified:
+            self.df_status = init_df
 
     def rename_tier(self, tier: Optional[str], name: Optional[str] = None, init_df: bool = True):
         '''
@@ -581,7 +584,7 @@ class ELAN_Data:
             Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `True`.
         '''
 
-        if not tiers or not any(tiers):
+        if not tiers:
             return
 
         root = self.tree.getroot()
@@ -593,8 +596,8 @@ class ELAN_Data:
 
         self._tier_names = list(set(self.tier_names) - set(tiers))
 
-        self._modified = True
-        self.df_status = init_df
+        if self._modified:
+            self.df_status = init_df
 
     def add_participant(self, tier: Optional[str], participant: Optional[str]):
         '''
