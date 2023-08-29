@@ -454,6 +454,70 @@ class ELAN_Data:
 
         return row[0] if not row.empty else None
 
+    def overlaps(self, seg_id: Optional[str], tiers: Optional[Iterable[str]], suprasegments: bool = True) -> pd.DataFrame:
+        '''
+        Find all segments on different tiers which overlap with the given segment.
+
+        Parameters
+        ---
+
+        seg_id : `str`
+            Segment ID; usually `a\d{1,}`.
+
+        tiers : `Sequence[str]`
+            Which tiers to check for overlapped segments (excludes tier current segment is on).
+
+        suprasegments : `bool`
+            If segments whose start and ends completely encompass the start and end of the `seg_id` segment should be included; defaults to True.
+
+        Returns
+        ---
+
+        - A sub-dataframe (slice/view) containing all segments on different tiers which overlap the given segment.
+
+        Raises
+        ---
+
+        - `ValueError`: If no segment matches the given `seg_id`.
+
+        Notes
+        ---
+
+        - This method will always reinitialize the DataFrame.
+        '''  # noqa: W605
+
+        if not tiers:
+            return
+
+        df = self.init_dataframe()
+
+        # Check for the segment based on its ID
+        segment = self.tier_data[self.tier_data.SEGMENT_ID == seg_id]
+
+        if segment.empty or len(segment) > 1:
+            raise ValueError("No segment matches the given seg_id value")
+
+        start, stop, tier = int(segment.START.values[0]), int(segment.STOP.values[0]), str(segment.TIER_ID.values[0])
+
+        # Tier mask; automatically exclude the segment's own tier
+        t = ((df.TIER_ID.isin(tiers)) & (df.TIER_ID != tier))
+
+        # There are four types of overlaps
+        # 1. End overlaps
+        # 2. Start overlaps
+        # 3. Start and End are in the segment's bounds
+        # 4. Suprasegment (segment within the bounds of another segment)
+        o1_3 = ((df.START >= start) & (df.START < stop)) | ((df.STOP > start) & (df.STOP <= stop))
+
+        if suprasegments:
+
+            o4 = (df.START < start) & (df.STOP > stop)
+
+            return df[t & o1_3 | o4]
+
+        else:
+            return df[t & o1_3]
+
 # ===================== MUTATORS =====================
 
     def add_tier(self, tier: Optional[str], init_df: bool = True, **kwargs):
@@ -976,70 +1040,6 @@ class ELAN_Data:
 
         self._modified = True
         self.df_status = init_df
-
-    def overlaps(self, seg_id: Optional[str], tiers: Optional[Iterable[str]], suprasegments: bool = True) -> pd.DataFrame:
-        '''
-        Find all segments on different tiers which overlap with the given segment.
-
-        Parameters
-        ---
-
-        seg_id : `str`
-            Segment ID; usually `a\d{1,}`.
-
-        tiers : `Sequence[str]`
-            Which tiers to check for overlapped segments (excludes tier current segment is on).
-
-        suprasegments : `bool`
-            If segments whose start and ends completely encompass the start and end of the `seg_id` segment should be included; defaults to True.
-
-        Returns
-        ---
-
-        - A sub-dataframe (slice/view) containing all segments on different tiers which overlap the given segment.
-
-        Raises
-        ---
-
-        - `ValueError`: If no segment matches the given `seg_id`.
-
-        Notes
-        ---
-
-        - This method will always reinitialize the DataFrame.
-        '''  # noqa: W605
-
-        if not tiers:
-            return
-
-        df = self.init_dataframe()
-
-        # Check for the segment based on its ID
-        segment = self.tier_data[self.tier_data.SEGMENT_ID == seg_id]
-
-        if segment.empty or len(segment) > 1:
-            raise ValueError("No segment matches the given seg_id value")
-
-        start, stop, tier = int(segment.START.values[0]), int(segment.STOP.values[0]), str(segment.TIER_ID.values[0])
-
-        # Tier mask; automatically exclude the segment's own tier
-        t = ((df.TIER_ID.isin(tiers)) & (df.TIER_ID != tier))
-
-        # There are four types of overlaps
-        # 1. End overlaps
-        # 2. Start overlaps
-        # 3. Start and End are in the segment's bounds
-        # 4. Suprasegment (segment within the bounds of another segment)
-        o1_3 = ((df.START >= start) & (df.START < stop)) | ((df.STOP > start) & (df.STOP <= stop))
-
-        if suprasegments:
-
-            o4 = (df.START < start) & (df.STOP > stop)
-
-            return df[t & o1_3 | o4]
-
-        else:
-            return df[t & o1_3]
 
 # ===================== OTHER METHODS =====================
 
