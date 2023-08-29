@@ -760,24 +760,28 @@ class ELAN_Data:
             return
 
         if isinstance(audio, str):
-            if audio == "":
-                return
             self.audio = Path(Path(audio).absolute().as_uri())
         elif isinstance(audio, Path):
             self.audio = Path(audio.absolute().as_uri())
+        else:
+            raise TypeError("audio is not a Path or a string")
 
         a = ET.Element('MEDIA_DESCRIPTOR')
 
         a.attrib["MEDIA_URL"] = self.audio.absolute().as_uri() if not place_holder else f"file:/{audio}"
+        a.attrib["RELATIVE_MEDIA_URL"] = ""  # Remove completely, ELAN will figure it out
         a.attrib["MIME_TYPE"] = "audio/x-wav"
 
-        parent = self.tree.find("HEADER")
+        parent = self.tree.find("./HEADER")
 
         assert isinstance(parent, ET.Element)
 
-        old_audio = parent.find("MEDIA_DESCRIPTOR")
+        old_audio = parent.find("./MEDIA_DESCRIPTOR")
 
-        if old_audio:
+        # Duplicate MEDIA_URL does not modify the object
+        if isinstance(old_audio, ET.Element):
+            if old_audio.attrib["MEDIA_URL"] == a.attrib["MEDIA_URL"]:
+                return
             parent.remove(old_audio)
 
         parent.insert(0, a)

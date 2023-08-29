@@ -475,6 +475,98 @@ class TestElan_Data:
         setup_file.add_participant(tier="The Cool Tier", participant="me")
         assert setup_file.modified is False
 
+    # add_tier_metadata(self, tier: Optional[str], init_df: bool = False, **kwargs)
+
+    def test_add_tier_metadata_default_params(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+
+        participant = "me"
+        setup_file.add_tier_metadata(tier=tier_names[0], PARTICIPANT=participant)
+
+        tier = setup_file.tree.find(f".//*[@TIER_ID='{tier_names[0]}']")
+
+        assert tier is not None
+        assert tier.attrib["PARTICIPANT"] == participant
+        assert setup_file.modified is True
+
+    def test_add_tier_metadata_not_modified(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+
+        # Not modified if the tier does not exist and/or is None; test by wanting to init the df
+        setup_file.add_tier_metadata(tier=None, PARTICIPANT="me", init_df=True)
+        assert setup_file.modified is False
+
+        setup_file.add_tier_metadata(tier="The Cool Tier", PARTICIPANT="me", init_df=True)
+        assert setup_file.modified is False
+
+    # add_metadata(self, author: str = "", date: str = "")
+
+    def test_add_metadata_default_params(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+
+        author, date = "John Doe", "08/28/2023"
+        setup_file.add_metadata(author=author, date=date)
+
+        node_author = setup_file.tree.find(f"[@AUTHOR='{author}']")
+        assert node_author is not None
+
+        node_date = setup_file.tree.find(f"[@DATE='{date}']")
+        assert node_date is not None
+
+        assert node_author == node_date
+
+    # add_audio(self, audio: Optional[Union[str, Path]], place_holder: bool = False)
+
+    @pytest.mark.parametrize("aud", [lazy_fixture("audio"), lazy_fixture("audio_str")])
+    def test_add_audio_default_params(self, setup_file: ELAN_Data, aud: Union[Path, str]) -> None:
+
+        old_audio = setup_file.audio
+        setup_file.add_audio(audio=aud)
+
+        assert isinstance(setup_file.audio, Path)
+        assert old_audio is not setup_file.audio
+
+        # Should only be one
+        nodes = setup_file.tree.findall(".//*MEDIA_DESCRIPTOR")
+        assert len(nodes) == 1
+
+        node = nodes[0]
+
+        assert node is not None
+        assert node.attrib["MEDIA_URL"] is not None
+        assert setup_file.modified is True
+
+    def test_add_audio_placeholder(self, setup_file: ELAN_Data) -> None:
+
+        audio = "placeholder.wav"
+        old_audio = setup_file.audio
+        setup_file.add_audio(audio=audio, place_holder=True)
+
+        assert isinstance(setup_file.audio, Path)
+        assert old_audio is not setup_file.audio
+
+        # Should only be one
+        nodes = setup_file.tree.findall(".//*MEDIA_DESCRIPTOR")
+        assert len(nodes) == 1
+
+        node = nodes[0]
+
+        assert node is not None
+        assert node.attrib["MEDIA_URL"] == f"file:/{audio}"
+        assert setup_file.modified is True
+
+    def test_add_audio_not_modified(self, setup_file: ELAN_Data) -> None:
+
+        # Not modified if audio is none, is the same audio, or is the empty string
+        # Second cond. not currently testable due to lack-of-portability for test
+        setup_file.add_audio(audio=None)
+        assert setup_file.modified is False
+
+        setup_file.add_audio(audio="")
+        assert setup_file.modified is False
+
+    @pytest.mark.parametrize("invalid_audio", [123, ["file.eaf", "names.eaf"]])
+    def test_invalid_add_audio(self, setup_file: ELAN_Data, invalid_audio: Any) -> None:
+        with pytest.raises((TypeError)):
+            setup_file.add_audio(audio=invalid_audio)
+
 
 class TestMisc:
 

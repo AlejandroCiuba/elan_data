@@ -12,6 +12,12 @@ List of planned additions or interesting things that could be added in the futur
 
     - Make `df_status = False` wipe the current `ELAN_Data.tier_data` `pd.DataFrame`.
 
+    - Better refine the behavior of methods in `ELAN_Data` which have an optional`**kwargs` argument (i.e. what to do if an element is `None` or is not a viable attribute name).
+
+    - Add `author` and `date` fields to `ELAN_Data` and appropriate logic if they are not available.
+
+    - Add more information in the `ELAN_Data.tier_data` DataFrame.
+
 ## Long-Term
 
 - Separate the `elan_data.ELAN_Data.tier_data` logic into its own class, `elan_data.Tier_Data` which inherits from `pd.DataFrame`.
