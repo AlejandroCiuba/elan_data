@@ -454,7 +454,7 @@ class ELAN_Data:
 
         return row[0] if not row.empty else None
 
-    def overlaps(self, seg_id: Optional[str], tiers: Optional[Iterable[str]], suprasegments: bool = True) -> pd.DataFrame:
+    def overlaps(self, seg_id: Optional[str] = None, tiers: Optional[Iterable[str]] = None, suprasegments: bool = True) -> pd.DataFrame:
         '''
         Find all segments on different tiers which overlap with the given segment.
 
@@ -486,8 +486,10 @@ class ELAN_Data:
         - This method will always reinitialize the DataFrame.
         '''  # noqa: W605
 
-        if not tiers:
-            return
+        if not tiers or not any(tiers):
+            # We can remove the segment itself in the mask
+            # Assumes no tier has self-overlapping segments
+            tiers = self.tier_names
 
         df = self.init_dataframe()
 
@@ -513,7 +515,7 @@ class ELAN_Data:
 
             o4 = (df.START < start) & (df.STOP > stop)
 
-            return df[t & o1_3 | o4]
+            return df[t & (o1_3 | o4)]
 
         else:
             return df[t & o1_3]

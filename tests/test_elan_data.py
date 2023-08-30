@@ -324,11 +324,47 @@ class TestElan_Data:
 
     # ===================== TEST ACCESSORS =====================
 
+    # get_segment(self, seg_id: str = "a1") -> Optional[str]
+
     def test_get_segment(self, setup_file: ELAN_Data, tier_data: pd.DataFrame) -> None:
 
         setup_file.init_dataframe()
 
         assert setup_file.get_segment("a1") == tier_data.loc[tier_data.SEGMENT_ID == "a1", "TEXT"][0]
+
+    # overlaps(self, seg_id: Optional[str], tiers: Optional[Iterable[str]], suprasegments: bool = True) -> pd.DataFrame
+
+    def test_overlaps_tiers(self, setup_file: ELAN_Data) -> None:
+
+        # We will get the segment in tier "creator;" it should only have 1 overlaps
+        overlaps = setup_file.overlaps(seg_id="a6", tiers=["creator"])
+
+        assert "a2" in overlaps.SEGMENT_ID.to_list()
+        assert "a7" not in overlaps.SEGMENT_ID.to_list()
+
+    def test_overlaps_no_suprasegments(self, setup_file: ELAN_Data) -> None:
+
+        overlaps = setup_file.overlaps(seg_id="a6", suprasegments=False)
+
+        assert "a2" in overlaps.SEGMENT_ID.to_list()
+        assert "a7" not in overlaps.SEGMENT_ID.to_list()
+
+    def test_overlaps_no_tiers(self, setup_file: ELAN_Data) -> None:
+
+        # It should only have 2 overlaps both times; the same ones
+        overlaps = setup_file.overlaps(seg_id="a6")
+
+        assert "a2" in overlaps.SEGMENT_ID.to_list()
+        assert "a7" in overlaps.SEGMENT_ID.to_list()
+
+        overlaps = setup_file.overlaps(seg_id="a6", tiers=[])
+
+        assert "a2" in overlaps.SEGMENT_ID.to_list()
+        assert "a7" in overlaps.SEGMENT_ID.to_list()
+
+    def test_invalid_overlaps(self, setup_file: ELAN_Data) -> None:
+        with pytest.raises(ValueError):
+            overlaps = setup_file.overlaps(seg_id=None)  # noqa: F841
 
     # ===================== TEST MUTATORS =====================
 
