@@ -38,7 +38,7 @@ The `elan_data` package comes with the main `ELAN_Data` object as well as severa
 
 ### Requirements
 
-- `Python 3.7-3.10`
+- `Python 3.7.16-3.10.*`
 - `pandas>=1.3.5`
 - `numpy>=1.21.6`
 - `matplotlib>=3.5.0`
