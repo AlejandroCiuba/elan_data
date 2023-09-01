@@ -524,7 +524,7 @@ class TestElan_Data:
         assert tier.attrib["PARTICIPANT"] == participant
         assert setup_file.modified is True
 
-    def test_add_tier_metadata_not_modified(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+    def test_add_tier_metadata_not_modified(self, setup_file: ELAN_Data) -> None:
 
         # Not modified if the tier does not exist and/or is None; test by wanting to init the df
         setup_file.add_tier_metadata(tier=None, PARTICIPANT="me", init_df=True)
@@ -535,7 +535,7 @@ class TestElan_Data:
 
     # add_metadata(self, author: str = "", date: str = "")
 
-    def test_add_metadata_default_params(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+    def test_add_metadata_default_params(self, setup_file: ELAN_Data) -> None:
 
         author, date = "John Doe", "08/28/2023"
         setup_file.add_metadata(author=author, date=date)
@@ -602,6 +602,89 @@ class TestElan_Data:
     def test_invalid_add_audio(self, setup_file: ELAN_Data, invalid_audio: Any) -> None:
         with pytest.raises((TypeError)):
             setup_file.add_audio(audio=invalid_audio)
+
+    # add_segment(self, tier: str, start: Union[int, str] = 0, stop: Union[int, str] = 100,
+    #             annotation: Optional[str] = "", init_df: bool = True)
+
+    def test_add_segment_default_params(self, setup_new: ELAN_Data, tier_data: pd.DataFrame, tier_names: list[str]) -> None:
+
+        # Empty segment; ideally on the default tier
+        setup_new.add_segment(tier=tier_names[0])
+
+        assert not setup_new.tier_data.equals(tier_data)
+        assert "" in setup_new.tier_data[setup_new.tier_data.TIER_ID == tier_names[0]].TEXT.to_list()
+
+        node = setup_new.tree.find(f".//*[@TIER_ID='{tier_names[0]}']/ANNOTATION/ALIGNABLE_ANNOTATION/ANNOTATION_VALUE")
+
+        assert isinstance(node, ET.Element)
+        assert node.text is None
+
+        assert setup_new.df_status is True
+        assert setup_new.modified is True
+
+    def test_add_segment_annotation(self, setup_new: ELAN_Data, tier_data: pd.DataFrame, tier_names: list[str]) -> None:
+
+        # Non-empty segment; ideally on the default tier
+        annotation = "Hey, guys. I'm a new segment and I'm really excited to be here!"
+        setup_new.add_segment(tier=tier_names[0], annotation=annotation)
+
+        assert not setup_new.tier_data.equals(tier_data)
+        assert annotation in setup_new.tier_data[setup_new.tier_data.TIER_ID == tier_names[0]].TEXT.to_list()
+
+        node = setup_new.tree.find(f".//*[@TIER_ID='{tier_names[0]}']/ANNOTATION/ALIGNABLE_ANNOTATION/ANNOTATION_VALUE")
+
+        assert isinstance(node, ET.Element)
+        assert annotation == node.text
+
+        assert setup_new.df_status is True
+        assert setup_new.modified is True
+
+    def test_add_segment_no_init_df(self, setup_new: ELAN_Data, tier_data: pd.DataFrame, tier_names: list[str]) -> None:
+
+        # Non-empty segment; ideally on the default tier
+        annotation = "Hey, guys. I'm a new segment and I'm really excited to be here!"
+        setup_new.add_segment(tier=tier_names[0], annotation=annotation, init_df=False)
+
+        assert not setup_new.tier_data.equals(tier_data)
+        assert annotation not in setup_new.tier_data[setup_new.tier_data.TIER_ID == tier_names[0]].TEXT.to_list()
+
+        node = setup_new.tree.find(f".//*[@TIER_ID='{tier_names[0]}']/ANNOTATION/ALIGNABLE_ANNOTATION/ANNOTATION_VALUE")
+
+        assert isinstance(node, ET.Element)
+        assert annotation == node.text
+
+        assert setup_new.df_status is False
+        assert setup_new.modified is True
+
+    def test_invalid_add_segment_no_tier(self, setup_new: ELAN_Data) -> None:
+        with pytest.raises((ValueError)):
+            setup_new.add_segment(tier="")
+
+    def test_add_segment_first_segment(self, tier_names: list[str]) -> None:
+
+        # Create a new ELAN_Data object and add a segment to it
+        ed = ELAN_Data.create_eaf(file="not_to_be_saved.eaf", audio=None, tiers=tier_names)
+
+        assert isinstance(ed, ELAN_Data)
+        assert ed.df_status is False
+        assert ed.modified is False
+
+        ed.add_segment(tier=tier_names[0])
+
+        assert "" in ed.tier_data[ed.tier_data.TIER_ID == tier_names[0]].TEXT.to_list()
+
+        node = ed.tree.find(f".//*[@TIER_ID='{tier_names[0]}']/ANNOTATION/ALIGNABLE_ANNOTATION/ANNOTATION_VALUE")
+
+        assert isinstance(node, ET.Element)
+        assert node.text is None
+
+        assert ed.df_status is True
+        assert ed.modified is True
+
+    @pytest.mark.parametrize("start", [-1, 30_000])
+    def test_invalid_add_segment_bad_start(self, setup_new: ELAN_Data, tier_names: list[str], start: int) -> None:
+        with pytest.raises((ValueError)):
+            setup_new.add_segment(tier=tier_names[0], start=start)
 
 
 class TestMisc:

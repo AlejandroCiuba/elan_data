@@ -12,11 +12,15 @@ List of planned additions or interesting things that could be added in the futur
 
     - Make `df_status = False` wipe the current `ELAN_Data.tier_data` `pd.DataFrame`.
 
-    - Better refine the behavior of methods in `ELAN_Data` which have an optional`**kwargs` argument (i.e. what to do if an element is `None` or is not a viable attribute name).
+    - Better refine the behavior of methods in `ELAN_Data` which have an optional `**kwargs` argument (i.e. what to do if an element is `None` or is not a viable attribute name).
 
     - Add `author` and `date` fields to `ELAN_Data` and appropriate logic if they are not available.
 
     - Add more information in the `ELAN_Data.tier_data` DataFrame.
+
+    - Add more properties to `ELAN_Data` (e.g. `beginning` and `end` of audio, if available).
+
+    - Make a `stop` time greater than the audio's stop time a `ValueError` for `ELAN_Data.add_segment()`.
 
 ## Long-Term
 
