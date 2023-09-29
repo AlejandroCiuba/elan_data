@@ -150,9 +150,10 @@ class ELAN_Data:
         # Separate the audio loading process, assumes local storage
         descriptor = ed_obj.tree.find(".//*[@MIME_TYPE]")
 
-        assert isinstance(descriptor, ET.Element)
-
-        ed_obj.audio = Path(descriptor.attrib["MEDIA_URL"])
+        if isinstance(descriptor, ET.Element):
+            ed_obj.audio = Path(descriptor.attrib["MEDIA_URL"])
+        else:
+            ed_obj.audio = None
 
         # Separate the dataframe init process
         ed_obj._init_data = False
