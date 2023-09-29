@@ -771,7 +771,7 @@ class ELAN_Data:
 
         a = ET.Element('MEDIA_DESCRIPTOR')
 
-        a.attrib["MEDIA_URL"] = self.audio.absolute().as_uri() if not place_holder else f"file:/{audio}"
+        a.attrib["MEDIA_URL"] = audio.absolute().as_uri() if not place_holder else f"file:/{audio}"
         a.attrib["RELATIVE_MEDIA_URL"] = ""  # Remove completely, ELAN will figure it out
         a.attrib["MIME_TYPE"] = "audio/x-wav"
 
