@@ -497,7 +497,7 @@ class ELAN_Data:
         segment = self.tier_data[self.tier_data.SEGMENT_ID == seg_id]
 
         if segment.empty or len(segment) > 1:
-            raise ValueError("No segment matches the given seg_id value")
+            raise ValueError(f"No segment matches the given seg_id value {seg_id}")
 
         start, stop, tier = int(segment.START.values[0]), int(segment.STOP.values[0]), str(segment.TIER_ID.values[0])
 
@@ -762,9 +762,9 @@ class ELAN_Data:
             return
 
         if isinstance(audio, str):
-            self.audio = Path(Path(audio).absolute().as_uri())
+            self.audio = Path(Path(audio).absolute())
         elif isinstance(audio, Path):
-            self.audio = Path(audio.absolute().as_uri())
+            self.audio = Path(audio.absolute())
         else:
             raise TypeError("audio is not a Path or a string")
 
@@ -1111,13 +1111,27 @@ class ELAN_Data:
         with open(file, 'rb') as src:
             return pickle.load(src)
 
-    def save_ELAN(self):
+    def save_ELAN(self, rename: Optional[Union[str, Path]]=None):
         '''
         Save as an `.eaf` file.
+
+        Parameters
+        ---
+
+        rename: `str`, `pathlib.Path` or `None
+            If you want the file to have a different name; good for saving modified copies.
+            **NOTE:** Requires there to be a full, absolute path.
+
+        Raises
+        ---
+        - `FileNotFoundError` if the associated `ELAN_Data` instance has no `.file` attribute.
         '''
 
         if not self.file:
             raise FileNotFoundError(f"{self.file.absolute()} is not a valid file path")
+        
+        if rename:
+            self.file = Path(rename)
 
         # Only works in Python 3.9+
         # ET.indent(self.tree)
