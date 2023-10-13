@@ -166,7 +166,7 @@ class ELAN_Data:
         return ed_obj
 
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path], audio: Optional[Union[str, Path]], init_df: bool = False) -> ELAN_Data:
+    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path], audio: Optional[Union[str, Path]] = None, init_df: bool = False) -> ELAN_Data:
         '''
         Initialize an ELAN_Data object based on a dataframe structured like a tiers dataframe (`ELAN_Data.tiers_data`).
 
@@ -182,7 +182,7 @@ class ELAN_Data:
         audio : `str` or `pathlib.Path`
             Audio associated with this `.eaf` file.
 
-        init_df : `bool`
+        init_df : `bool` DEPRECATED; TIHS METHOD WILL ALWAYS INITIALIZE THE DATAFRAME UNTIL FURTHER NOTICE
             Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `False`.
 
         Returns
@@ -396,7 +396,7 @@ class ELAN_Data:
 
         return self.file == other.file and self.audio == other.audio \
             and self._tier_names == other.tier_names and self.tier_data.equals(other.tier_data) \
-            and self.tree == other.tree and self._modified == other.modified
+            and self._modified == other.modified  # Trees is a redundant check and not guaranteed
 
 # ===================== FIELDS =====================
 
@@ -603,8 +603,7 @@ class ELAN_Data:
                 self._modified = True
 
         # Reinitialize dataframe only if we modified it
-        if self._modified:
-            self.df_status = init_df
+        self.df_status = init_df
 
     def rename_tier(self, tier: Optional[str], name: Optional[str] = None, init_df: bool = True):
         '''
@@ -663,8 +662,7 @@ class ELAN_Data:
 
         self._tier_names = list(set(self.tier_names) - set(tiers))
 
-        if self._modified:
-            self.df_status = init_df
+        self.df_status = init_df
 
     def add_participant(self, tier: Optional[str], participant: Optional[str]):
         '''
@@ -833,7 +831,7 @@ class ELAN_Data:
             raise ValueError("Start must be 0 or greater and less than stop")
 
         if tier not in self._tier_names:
-            self.add_tiers([tier], False)
+            self.add_tier(tier, False)
 
         # I need to manually cast them to the correct type because
         # Python's "strict typing" is a fake friend...
