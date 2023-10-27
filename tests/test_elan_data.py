@@ -380,6 +380,27 @@ class TestElan_Data:
 
     # ===================== TEST MUTATORS =====================
 
+    # change_file(self, filepath: Union[str, Path])
+
+    @pytest.mark.parametrize("filepath", ["new/file/path.eaf", Path("new/file/path.eaf")])
+    @pytest.mark.parametrize("ed", [lazy_fixture("setup_file"), lazy_fixture("setup_new")])
+    def test_change_file_default_params(self, ed: ELAN_Data, filepath: Union[str, Path]) -> None:
+
+        ed.change_file(filepath)
+
+        assert ed.file == Path(filepath)
+        assert ed.modified is True
+
+    @pytest.mark.parametrize("ed", [lazy_fixture("setup_file"), lazy_fixture("setup_new")])
+    def test_change_file_not_modified(self, ed: ELAN_Data) -> None:
+        ed.change_file(ed.file)
+        assert ed.modified is False
+
+    @pytest.mark.parametrize("ed", [lazy_fixture("setup_file"), lazy_fixture("setup_new")])
+    def test_invalid_change_file(self, ed: ELAN_Data):
+        with pytest.raises((TypeError)):
+            ed.change_file(0)  # noqa: F841
+
     # add_tier(self, tier: Optional[str], init_df: bool = True, **kwargs)
 
     def test_add_tier_default_params(self, setup_file: ELAN_Data) -> None:

@@ -542,7 +542,13 @@ class ELAN_Data:
         '''
 
         if isinstance(filepath, (str, Path)):
-            self.file = Path(filepath)
+
+            if self.file != Path(filepath):
+                self.file = Path(filepath)
+                self._modified = True
+
+            return
+
         else:
             raise TypeError("Incorrect type passed into change_filepath")
 
@@ -1165,7 +1171,7 @@ class ELAN_Data:
         if rename:
             self.file = Path(rename)
 
-        if not (rename or rename == "") and not self.modified and raise_error_if_unmodified:
+        if self.file.exists() and raise_error_if_unmodified:
             raise FileExistsError(f"{self.file.absolute()} already exists!!! You would be overwriting it.")
 
         # Only works in Python 3.9+
