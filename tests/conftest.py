@@ -25,6 +25,7 @@ CREATED = f"{TEST_DIR}/created"
 # Keys
 AUDIO = f"{KEYS}/key.wav"
 EAF = f"{KEYS}/key.eaf"
+EAF_NO_AUDIO = f"{KEYS}/key-no-audio.eaf"
 RTTM = f"{KEYS}/key.rttm"
 RTTM_FILTERED = f"{KEYS}/key-filtered.rttm"
 TXT = f"{KEYS}/key.txt"
@@ -154,6 +155,16 @@ def eaf() -> Path:
 @pytest.fixture()
 def eaf_str() -> str:
     return EAF
+
+
+@pytest.fixture()
+def eaf_no_audio() -> Path:
+    return Path(EAF_NO_AUDIO)
+
+
+@pytest.fixture()
+def eaf_no_audio_str() -> str:
+    return EAF_NO_AUDIO
 
 
 @pytest.fixture()

@@ -86,7 +86,8 @@ class TestElan_Data:
         with pytest.raises((ValueError, TypeError)):
             ed = ELAN_Data(invalid_file)  # noqa: F841
 
-    @pytest.mark.parametrize("file", [lazy_fixture("eaf"), lazy_fixture("eaf_str")])
+    @pytest.mark.parametrize("file", [lazy_fixture("eaf"), lazy_fixture("eaf_str"),
+                                      lazy_fixture("eaf_no_audio"), lazy_fixture("eaf_no_audio_str")])
     def test_from_file_default_params(self, file: Union[str, Path], audio: Path,
                                       tier_names: list[str], tier_data: pd.DataFrame,
                                       tree: ET.ElementTree) -> None:
@@ -98,7 +99,12 @@ class TestElan_Data:
         assert ed.file == Path(file)
         assert ed.tree.__eq__(tree)
         assert ed._tier_names == tier_names
-        assert ed.audio == Path(audio.absolute().as_uri())
+
+        if "-no-audio" not in str(file):
+            assert ed.audio == audio.absolute()
+        else:
+            assert ed.audio is None
+
         assert ed.tier_data.columns.to_list() == tier_data.columns.to_list()
         assert ed.tier_data.empty
         assert ed._init_data is False
@@ -115,7 +121,7 @@ class TestElan_Data:
         assert ed.file == Path(file)
         assert ed.tree.__eq__(tree)
         assert ed._tier_names == tier_names
-        assert ed.audio == Path(audio.absolute().as_uri())
+        assert ed.audio == audio.absolute()
         assert ed.tier_data.columns.to_list() == tier_data.columns.to_list()
         assert ed.tier_data.equals(tier_data)
         assert ed._init_data is True
@@ -139,7 +145,7 @@ class TestElan_Data:
         assert ed.tree.__eq__(tree)
         assert ed._tier_names == tier_names
         if aud:
-            assert ed.audio == Path(audio.absolute().as_uri())
+            assert ed.audio == audio.absolute()
         else:
             assert aud is None
         assert ed.tier_data.columns.to_list() == tier_data.columns.to_list()
@@ -160,7 +166,7 @@ class TestElan_Data:
         assert ed.tree.__eq__(tree)
         assert ed._tier_names == tier_names
         if aud:
-            assert ed.audio == Path(audio.absolute().as_uri())
+            assert ed.audio == audio.absolute()
         else:
             assert aud is None
         assert ed.tier_data.columns.to_list() == tier_data.columns.to_list()
@@ -188,7 +194,7 @@ class TestElan_Data:
         assert ed.tree.__eq__(minimum_elan)
         assert ed._tier_names == tier_names
         if aud:
-            assert ed.audio == Path(audio.absolute().as_uri())
+            assert ed.audio == audio.absolute()
         else:
             assert aud is None
         assert ed.tier_data.columns.to_list() == tier_data.columns.to_list()
@@ -213,7 +219,7 @@ class TestElan_Data:
         assert ed.tree.__eq__(minimum_elan)
         assert ed._tier_names == tier_names
         if aud:
-            assert ed.audio == Path(audio.absolute().as_uri())
+            assert ed.audio == audio.absolute()
         else:
             assert aud is None
         assert ed.tier_data.columns.to_list() == tier_data.columns.to_list()
@@ -294,7 +300,13 @@ class TestElan_Data:
     def test_equals_false(self, ed1: ELAN_Data, ed2: ELAN_Data) -> None:
         assert ed1 != ed2
 
+    def test_equals_unimplemented(self, setup_file: ELAN_Data) -> None:
+        assert setup_file.__eq__(None)
+
     # ===================== TEST PROPERTIES =====================
+
+    def test_name(self, setup_file: ELAN_Data) -> None:
+        assert setup_file.name == setup_file.file.name
 
     def test_tier_names(self, setup_file: ELAN_Data) -> None:
         assert setup_file.tier_names == setup_file._tier_names
@@ -550,7 +562,7 @@ class TestElan_Data:
 
     # add_audio(self, audio: Optional[Union[str, Path]], place_holder: bool = False)
 
-    @pytest.mark.parametrize("aud", [lazy_fixture("audio"), lazy_fixture("audio_str")])
+    @pytest.mark.parametrize("aud", [lazy_fixture("audio"), lazy_fixture("audio_str"), "new_audio.wav"])
     def test_add_audio_default_params(self, setup_file: ELAN_Data, aud: Union[Path, str]) -> None:
 
         old_audio = setup_file.audio
@@ -567,26 +579,11 @@ class TestElan_Data:
 
         assert node is not None
         assert node.attrib["MEDIA_URL"] is not None
-        assert setup_file.modified is True
 
-    def test_add_audio_placeholder(self, setup_file: ELAN_Data) -> None:
-
-        audio = "placeholder.wav"
-        old_audio = setup_file.audio
-        setup_file.add_audio(audio=audio, place_holder=True)
-
-        assert isinstance(setup_file.audio, Path)
-        assert old_audio is not setup_file.audio
-
-        # Should only be one
-        nodes = setup_file.tree.findall(".//*MEDIA_DESCRIPTOR")
-        assert len(nodes) == 1
-
-        node = nodes[0]
-
-        assert node is not None
-        assert node.attrib["MEDIA_URL"] == f"file:/{audio}"
-        assert setup_file.modified is True
+        if aud == "new_audio.wav":
+            assert setup_file.modified is True
+        else:
+            assert setup_file.modified is False
 
     def test_add_audio_not_modified(self, setup_file: ELAN_Data) -> None:
 
@@ -690,7 +687,9 @@ class TestElan_Data:
 class TestMisc:
 
     def test_version(self) -> None:
+
         ver = elan_data.__version__()
+
         assert isinstance(ver, str)
         assert elan_data.VERSION in ver
 

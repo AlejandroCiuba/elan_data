@@ -151,7 +151,7 @@ class ELAN_Data:
         descriptor = ed_obj.tree.find(".//*[@MIME_TYPE]")
 
         if isinstance(descriptor, ET.Element):
-            ed_obj.audio = Path(descriptor.attrib["MEDIA_URL"])
+            ed_obj.audio = Path(descriptor.attrib["MEDIA_URL"].replace("file:", ""))
         else:
             ed_obj.audio = None
 
@@ -287,7 +287,7 @@ class ELAN_Data:
             Text in the given segment.
 
         SEGMENT_ID : `str`
-            Unique ID given to that chunk; format `a\d{1,}`.
+            Unique ID given to that chunk; format `a\\d{1,}`.
 
         Returns
         ---
@@ -401,6 +401,10 @@ class ELAN_Data:
 # ===================== FIELDS =====================
 
     @property
+    def name(self) -> str:
+        return str(self.file.name)
+
+    @property
     def tier_names(self) -> list[str]:
         return self._tier_names
 
@@ -438,7 +442,7 @@ class ELAN_Data:
         ---
 
         seg_id : `str`
-            The segment's ID; in the form `a\d{1,}`
+            The segment's ID; in the form `a\\d{1,}`
 
         Returns
         ---
@@ -463,7 +467,7 @@ class ELAN_Data:
         ---
 
         seg_id : `str`
-            Segment ID; usually `a\d{1,}`.
+            Segment ID; usually `a\\d{1,}`.
 
         tiers : `Sequence[str]`
             Which tiers to check for overlapped segments (excludes tier current segment is on).
@@ -522,6 +526,25 @@ class ELAN_Data:
             return df[t & o1_3]
 
 # ===================== MUTATORS =====================
+
+    def change_file(self, filepath: Union[str, Path]):
+        '''
+        Change the filepath associated with this information. Does
+        not overwrite the actual file's name. This is useful for
+        making copies or saving changes made to the data in a
+        separate file.
+
+        Parameters
+        ---
+
+        filepath : `str or pathlib.Path`
+            New filepath destination.
+        '''
+
+        if isinstance(filepath, (str, Path)):
+            self.file = Path(filepath)
+        else:
+            raise TypeError("Incorrect type passed into change_filepath")
 
     def add_tier(self, tier: Optional[str], init_df: bool = True, **kwargs):
         '''
@@ -603,7 +626,8 @@ class ELAN_Data:
                 self._modified = True
 
         # Reinitialize dataframe only if we modified it
-        self.df_status = init_df
+        if self.modified:
+            self.df_status = init_df
 
     def rename_tier(self, tier: Optional[str], name: Optional[str] = None, init_df: bool = True):
         '''
@@ -662,7 +686,8 @@ class ELAN_Data:
 
         self._tier_names = list(set(self.tier_names) - set(tiers))
 
-        self.df_status = init_df
+        if self.modified:
+            self.df_status = init_df
 
     def add_participant(self, tier: Optional[str], participant: Optional[str]):
         '''
@@ -743,7 +768,7 @@ class ELAN_Data:
         root.attrib["AUTHOR"] = author
         root.attrib["DATE"] = date
 
-    def add_audio(self, audio: Optional[Union[str, Path]], place_holder: bool = False):
+    def add_audio(self, audio: Optional[Union[str, Path]]):
         '''
         Add/replace audio associated with this `ELAN_Data` instance.
 
@@ -753,8 +778,9 @@ class ELAN_Data:
         audio : `str` or `pathlib.Path`
             Audio file path.
 
-        place_holder : `bool`
-            Given filepath is a placeholder that will be updated later; useful when the audio is not available on the current computer.
+        Note
+        ---
+        - Giving a placeholder filepath is useful when the audio is not available on the current computer.
         '''
 
         if not audio:
@@ -769,7 +795,7 @@ class ELAN_Data:
 
         a = ET.Element('MEDIA_DESCRIPTOR')
 
-        a.attrib["MEDIA_URL"] = audio.absolute().as_uri() if not place_holder else f"file:/{audio}"
+        a.attrib["MEDIA_URL"] = self.audio.absolute().as_uri()
         a.attrib["RELATIVE_MEDIA_URL"] = ""  # Remove completely, ELAN will figure it out
         a.attrib["MIME_TYPE"] = "audio/x-wav"
 
@@ -919,7 +945,7 @@ class ELAN_Data:
             Where to do the splits (ms); bounds: `(start, stop)`.
 
         seg_id : `str`
-            Segment ID; usually `a\d{1,}`.
+            Segment ID; usually `a\\d{1,}`.
 
         Raises
         ---
@@ -1026,7 +1052,7 @@ class ELAN_Data:
         ---
 
         seg_id : `str`
-            The ID of the segment to remove; usually "a\d{1,}"
+            The ID of the segment to remove; usually "a\\d{1,}"
 
         init_df : `bool`
             Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `True`.
@@ -1110,7 +1136,8 @@ class ELAN_Data:
         with open(file, 'rb') as src:
             return pickle.load(src)
 
-    def save_ELAN(self, rename: Optional[Union[str, Path]]=None):
+    def save_ELAN(self, rename: Optional[Union[str, Path]] = None,
+                  raise_error_if_unmodified: bool = True):
         '''
         Save as an `.eaf` file.
 
@@ -1121,16 +1148,25 @@ class ELAN_Data:
             If you want the file to have a different name; good for saving modified copies.
             **NOTE:** Requires there to be a full, absolute path.
 
+        raise_error_if_unmodified: `bool`
+            To prevent overwriting already existing `.eaf` files, this option will raise a
+            `FileExistsError` if enabled; defaults to `True`.
+
         Raises
         ---
         - `FileNotFoundError` if the associated `ELAN_Data` instance has no `.file` attribute.
+        - `FileExistsError` if raise_error_if_unmodified is set to `True` and the associated
+        `.eaf` file already exists.
         '''
 
-        if not self.file:
+        if not self.file and not (rename or rename == ""):
             raise FileNotFoundError(f"{self.file.absolute()} is not a valid file path")
-        
+
         if rename:
             self.file = Path(rename)
+
+        if not (rename or rename == "") and not self.modified and raise_error_if_unmodified:
+            raise FileExistsError(f"{self.file.absolute()} already exists!!! You would be overwriting it.")
 
         # Only works in Python 3.9+
         # ET.indent(self.tree)
