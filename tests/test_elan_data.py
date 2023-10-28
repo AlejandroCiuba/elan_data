@@ -399,7 +399,7 @@ class TestElan_Data:
     @pytest.mark.parametrize("ed", [lazy_fixture("setup_file"), lazy_fixture("setup_new")])
     def test_invalid_change_file(self, ed: ELAN_Data):
         with pytest.raises((TypeError)):
-            ed.change_file(0)  # noqa: F841
+            ed.change_file(filepath=0)  # type: ignore
 
     # add_tier(self, tier: Optional[str], init_df: bool = True, **kwargs)
 
