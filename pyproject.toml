@@ -1,2 +1,6 @@
 requires = ["setuptools>=42.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project.urls]
+"Homepage" = "https://github.com/AlejandroCiuba/elan_data"
+"Bug Tracker" = "https://github.com/AlejandroCiuba/elan_data/issues"
