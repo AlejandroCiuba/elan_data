@@ -14,3 +14,9 @@ class Tier:
 
     def __init__(self, type: str = "default-lt", tier_id: str = "default"):
         pass
+
+class Subtier:
+
+    '''
+    Object used to store and edit tier attributes for a subtier.
+    '''
