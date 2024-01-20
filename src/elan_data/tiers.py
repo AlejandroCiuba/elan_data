@@ -7,6 +7,7 @@ from typing import Union
 import sys
 import textwrap
 
+import pandas as pd
 import xml.etree.ElementTree as ET
 
 if sys.version_info >= (3, 8):
@@ -68,13 +69,15 @@ class TierType:
 
 # ===================== Tier Class =====================
 
-@dataclass
+@dataclass(init=False)
 class Tier:
     '''
     Object used to store and edit tier attribute and segmentation information.
     '''
 
     name: str = "default"
+    participant: str = ""
+    annotator: str = ""
     tier_type: TierType = TierType()  # Calling with no args is the default-lt type
 
     def __str__(self) -> str:
@@ -130,10 +133,7 @@ class Subtier(Tier):
         - An XML tag as defined by `xml.etree.ElementTree.Element`.
         '''
 
-        element = ET.Element("TIER")
-
-        element.attrib["LINGUISTIC_TYPE_REF"] = self.tier_type.name
-        element.attrib["TIER_ID"] = self.name
+        element = super().as_xml()
         element.attrib["PARENT_REF"] = self.parent.name
 
         return element
