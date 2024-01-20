@@ -27,7 +27,7 @@ RETURN = Literal["wave", "ndarray"]
 
 def eaf_to_rttm(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
                 filter: list = [], encoding: str = "UTF-8"):
-    """
+    '''
     Convert a .eaf file to the RTTM format.
 
     Parameters
@@ -47,7 +47,7 @@ def eaf_to_rttm(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
 
     - For Speaker Names, spaces in the tier name of the .eaf file are replaced with underscores in the .rttm file.
     - `utf-8` encoding.
-    """
+    '''
 
     # Create the Elan_Data object from the file
     if isinstance(src, (str, Path)):
@@ -85,7 +85,7 @@ def eaf_to_rttm(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
 
 def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
                 filter: list = [], encoding: str = "UTF-8", formatter: Optional[Callable[..., str]] = None):
-    """
+    '''
     Takes the text of an `.eaf` file and outputs it to a text file.
 
     Parameters
@@ -108,7 +108,7 @@ def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
 
     - Default Format: `TIER_ID START-STOP: TEXT`.
     - `utf-8` encoding.
-    """
+    '''
 
     def default(row) -> str:
         return f"{row.TIER_ID} {row.START}-{row.STOP}: {row.TEXT.strip()}"
@@ -135,7 +135,7 @@ def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
 
 @contextlib.contextmanager
 def audio_loader(audio: Union[str, Path], mode: Union[MODE, str] = "rb") -> Iterator[Union[wave.Wave_read, wave.Wave_write]]:
-    """
+    '''
     Context manageable function that loads in audio. Closes file upon end.
 
     Parameters
@@ -161,7 +161,7 @@ def audio_loader(audio: Union[str, Path], mode: Union[MODE, str] = "rb") -> Iter
     ---
 
     - Essentially just a wrapper around `wave.open` to allow Paths. There might be more functionality in future iterations.
-    """
+    '''
 
     # Error handling
     if not isinstance(audio, Path):
@@ -180,7 +180,7 @@ def audio_loader(audio: Union[str, Path], mode: Union[MODE, str] = "rb") -> Iter
 
 def sound_wave(audio: Union[str, Path], start: float = 0, stop: float = -1,
                name: str = "Soundwave", **kwargs) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
-    """
+    '''
     Plots the audio's amplitude for each channel.
 
     Parameters
@@ -214,7 +214,7 @@ def sound_wave(audio: Union[str, Path], start: float = 0, stop: float = -1,
     - `TypeError`: If the given audio isn't a string or Path.
     - `ValueError`: If the start time is greater than the stop time (excluding -1).
     - `ValueError`: If the start time is greater than the audio duration.
-    """
+    '''
     # Error handling
     if start < 0:
         raise ValueError("Start time cannot be negative")

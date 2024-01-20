@@ -50,7 +50,6 @@ MINIMUM_ELAN = \
 
 
 class ELAN_Data:
-
     '''
     Object used to create, edit, and parse `eaf` files used by ELAN software.
 
