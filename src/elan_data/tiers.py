@@ -4,13 +4,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from elan_data import _ELAN_ENCODING
 from pathlib import Path
-from typing import Union
+from typing import (Any,
+                    Optional,
+                    Union, )
 
 import sys
 import textwrap
 import typing
 
 import pandas as pd
+import numpy as np
 import xml.etree.ElementTree as ET
 
 if sys.version_info >= (3, 8):
@@ -255,7 +258,7 @@ class Subtier(Tier):
 
 
 # ===================== Segmentation Class =====================
-    
+
 # TODO: Decide if I want the tier and subtier information here too
 
 class Segmentations:
@@ -263,27 +266,66 @@ class Segmentations:
     Object used to store segmentation information.
     '''
 
-    def __init__(self):
+    COLUMNS: set[str] = {'TIER', 'START', 'END', 'TEXT', 'ID', 'DURATION'}
+
+    def __init__(self, data: Optional[Union[dict[str, list[Any]], pd.DataFrame]]):
         '''
         Default constructor.
+
+        Parameters
+        ---
+
+        data : `dict` or `pd.DataFrame`
+            Data to start the Segmentations object with.
+
+        Notes
+        ---
+
+        - This constructor assumes all columns (Segmentation.COLUMNS) are provided.
+        - This constructor makes a deep copy of any passed DataFrame; additional columns are dropped.
+        - This object enforces strict column types:
+            - `TIER` as `str`
+            - `START` as `np.int32`
+            - `END` as `np.int32`
+            - `TEXT` as `str`
+            - `ID` as `str`
+            - `DURATION as `np.int32`
+        - This constructore will automatically cast the provided data to these types.
+        - Note that casting `TIER` to a `'category'` type is encouraged; only exception.
         '''
 
-        self.segments: pd.DataFrame = pd.DataFrame({'TIER_ID':       [],
-                                                    'START':         [],
-                                                    'STOP':          [],
-                                                    'TEXT':          [],
-                                                    'SEGMENT_ID':    [],
-                                                    'DURATION':      [], })
+        if data is not None:
+            if isinstance(data, dict):
+                self.segments: pd.DataFrame = pd.DataFrame({'TIER':     data['TIER'],
+                                                            'START':    data['START'],
+                                                            'END':      data['END'],
+                                                            'TEXT':     data['TEXT'],
+                                                            'ID':       data['ID'],
+                                                            'DURATION': data['DURATION'], })
+            elif isinstance(data, pd.DataFrame):
+                self.segments = data.copy(deep=True).drop(columns=set(data.columns).difference(self.COLUMNS))
 
-        # Keeps track of the unique tiers and subtiers for segments
-        self.tiers: set[Tier] = set()
-        self.subtiers: set[Subtier] = set()
-        self.tier_types: set[TierType] = set()
+            # Reinforce column types
+            self.segments = self.segments.astype({'TIER':     str,
+                                                  'START':    np.int32,
+                                                  'END':      np.int32,
+                                                  'TEXT':     str,
+                                                  'ID':       str,
+                                                  'DURATION': np.int32, })
 
+        else:
+            self.segments = pd.DataFrame.astype({'TIER':     str,
+                                                 'START':    np.int32,
+                                                 'END':      np.int32,
+                                                 'TEXT':     str,
+                                                 'ID':       str,
+                                                 'DURATION': np.int32, })
+
+    @typing.no_type_check  # Avoid unnecessary casting to clean-up code
     @classmethod
     def from_file(cls, file: Union[str, Path]) -> Segmentations:
         '''
-        Extracts the segment and tier information from an `.eaf` file.
+        Extracts the segment information from an `.eaf` file.
 
         Returns
         ---
@@ -291,24 +333,47 @@ class Segmentations:
         - A `Segmentation` object.
         '''
 
-        seg = cls()
+        data = {'TIER':  [],
+                'START': [],
+                'END':   [],
+                'TEXT':  [],
+                'ID':    [], }
 
         with open(file, 'r', encoding=_ELAN_ENCODING) as src:
             tree = ET.parse(src)
 
-        # 1. get tier information
-        # Making subtiers requires making the parent tiers first
+        # 1. Get tier information
         for e in tree.findall(".//TIER"):
 
-            if "PARENT_REF" not in e.attrib:
+            tier = e.attrib["TIER_ID"]
 
-                tier_type = tree.find(f".//[@LINGUISTIC_TYPE_ID='{e.attrib['LINGUISTIC_TYPE_REF']}']")
+            # Search for the information we'll need to extract time info from the XML tree
+            search = f".//*[@TIER_ID='{tier}']//ALIGNABLE_ANNOTATION"
+            aligns = [element.attrib for element in tree.findall(search)]
 
-                if tier_type is None:
-                    raise TypeError("No tier type information found.")
+            data['TIER'].extend([tier] * len(aligns))
 
-                tier = Tier.from_xml(tag=e, tier_type=tier_type)
-                seg.tiers.add(tier)
-                seg.tier_types.add(tier.tier_type)
+            # Get segmentation IDs
+            data['ID'].extend([element['ANNOTATION_ID'] for element in aligns])
+
+            # Get start and end times for all segments
+            starts = [int(tree.find(f".//*[@TIME_SLOT_ID='{element['TIME_SLOT_REF1']}']").attrib['TIME_VALUE']) for element in aligns]
+            data['START'].extend(starts)
+
+            ends = [int(tree.find(f".//*[@TIME_SLOT_ID='{element['TIME_SLOT_REF2']}']").attrib['TIME_VALUE']) for element in aligns]
+            data['END'].extend(ends)
+
+            # Calculate durations
+            data['DURATION'].extend([int(start - end) for start, end in zip(starts, ends)])
+
+            # Get segmentation text values
+            texts = []
+            for text in [tree.find(f".//*[@TIER_ID='{tier}']//*[@ANNOTATION_ID='{element['ANNOTATION_ID']}']/ANNOTATION_VALUE").text for element in aligns]:
+                texts.append(text if text is not None else "")
+
+            data['TEXT'].extend(texts)
+
+        # 2. Create the Segmentations object
+        seg = cls(data=data)
 
         return seg
