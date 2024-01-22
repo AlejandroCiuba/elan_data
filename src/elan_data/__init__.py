@@ -357,6 +357,7 @@ class ELAN_Data:
         return self.tier_data
 
 # ===================== DUNDER METHODS =====================
+
     def __repr__(self) -> str:
         return \
         textwrap.dedent(f'''\

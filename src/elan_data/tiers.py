@@ -23,8 +23,8 @@ else:
 
 STEREOTYPE = Literal["None", "Time_Subdivision", "Symbolic_Subdivision", "Symbolic_Association", "Included_In"]
 
-
 # ===================== TierType Class =====================
+
 
 @dataclass
 class TierType:
@@ -96,8 +96,8 @@ class TierType:
 
         return element
 
-
 # ===================== Tier Class =====================
+
 
 @dataclass()
 class Tier:
@@ -173,8 +173,8 @@ class Tier:
 
         return element
 
-
 # ===================== Subtier Class =====================
+
 
 @dataclass
 class Subtier(Tier):
@@ -256,10 +256,8 @@ class Subtier(Tier):
 
         return element
 
-
 # ===================== Segmentation Class =====================
 
-# TODO: Decide if I want the tier and subtier information here too
 
 class Segmentations:
     '''
@@ -377,3 +375,11 @@ class Segmentations:
         seg = cls(data=data)
 
         return seg
+
+# ===================== DUNDER METHODS =====================
+
+    def __repr__(self) -> str:
+        return \
+        textwrap.dedent(f'''\
+        {type(self).__name__}({self.segments!r})
+        ''')  # noqa: E122
