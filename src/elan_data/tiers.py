@@ -265,6 +265,7 @@ class Segmentations:
     '''
 
     COLUMNS: set[str] = {'TIER', 'START', 'END', 'TEXT', 'ID', 'DURATION'}
+    _ID: int = 1  # Update segments to the "best" ID for the XML
 
     def __init__(self, data: Optional[Union[dict[str, list[Any]], pd.DataFrame]]):
         '''
@@ -304,12 +305,10 @@ class Segmentations:
                 self.segments = data.copy(deep=True).drop(columns=set(data.columns).difference(self.COLUMNS))
 
             # Reinforce column types
-            self.segments = self.segments.astype({'TIER':     str,
-                                                  'START':    np.int32,
-                                                  'END':      np.int32,
-                                                  'TEXT':     str,
-                                                  'ID':       str,
-                                                  'DURATION': np.int32, })
+            self._reinforce()
+
+            # Establish the "best" next ID
+            self._ID = self.segments.ID.max()
 
         else:
             self.segments = pd.DataFrame.astype({'TIER':     str,
@@ -383,3 +382,119 @@ class Segmentations:
         textwrap.dedent(f'''\
         {type(self).__name__}({self.segments!r})
         ''')  # noqa: E122
+
+    def __str__(self) -> str:
+        return \
+        textwrap.dedent(f'''\
+        Tiers: {self.segments.Tier.unique()}
+        Segments: {len(self.segments)}
+        Maximum ID: a{self._ID}
+        ''')  # noqa: E122
+
+    def __len__(self) -> int:
+        return len(self.segments)
+
+    def __contains__(self, item: str) -> bool:
+        return not self.segments[self.segments.Tier == item].empty
+
+# ===================== ACCESSORS =====================
+
+    def get_segment(self, id: Union[str, int]) -> Optional[pd.DataFrame]:
+        '''
+        Find the given segment based on the segment ID.
+
+        Parameters
+        ---
+
+        id : `str` or `int`
+            The segment's ID; in the form `a\\d{1,}`, or an integer.
+
+        Returns
+        ---
+
+        - The `pd.Series` row for the segment or `None` if no segment was found.
+        '''
+        pass
+
+# ===================== MUTATORS METHODS =====================
+
+    def add_segment(self, tier: str, start: Union[int, str] = 0, end: Union[int, str] = 100,
+                    annotation: Optional[str] = ""):
+        '''
+        Adds an annotation segment to a given tier.
+
+        Parameters
+        ---
+
+        tier : `str`
+            Name of the tier.
+
+        start : `int` or `str`
+            Where the segment begins (ms).
+
+        end : `int` or `str`
+            Where the segment ends (ms).
+
+        annotation : `str`
+            Annotation for the segment.
+
+        Notes
+        ---
+
+        - Does not matter if the tier actually exists; `ELAN_Data` should handle that.
+        '''
+
+        if int(start) < 0 or int(end) <= int(start):
+            raise ValueError("Start time is less than 0 or greater than the end time")
+
+        # I need to manually cast them to the correct type because
+        # Python's "strict typing" is a fake friend...
+        start, end = str(int(start)), str(int(end))
+
+        # Insert it into the DataFrame
+        self.segments = pd.concat([self.segments, pd.DataFrame([tier, start, end, annotation, f"a{self._ID}"], columns=self.segments.columns)],
+                                  ignore_index=True)
+
+        # Update ID
+        self._ID += 1
+
+    def remove_segment(self, id: Union[str, int]):
+        '''
+        Remove the given audio segment.
+
+        Parameters
+        ---
+
+        id : `str` or `int`
+            The ID of the segment to remove; usually "a\\d{1,}", or an integer.
+        '''
+
+        # There should be either one or no indices returned
+        form = f"a{id}" if isinstance(id, int) else id
+        query = self.segments[self.segments.id == form]
+
+        if not query.empty and len(query) == 1:
+
+            index = self.segments[self.segments.id == form].idxmax
+            self.segments.drop(index=index, inplace=True)
+
+        else:
+            raise Exception("Multiple segments with the same ID")
+
+# ===================== OTHER METHODS =====================
+
+    def _reinforce(self):
+        '''
+        Reinforce column types; casts columns to correct types.
+
+        Notes
+        ---
+
+        - `Segmentations.segments` must already exist.
+        '''
+        self.segments = self.segments.astype({'TIER':     str,
+                                              'START':    np.int32,
+                                              'END':      np.int32,
+                                              'TEXT':     str,
+                                              'ID':       str,
+                                              'DURATION': np.int32, })
