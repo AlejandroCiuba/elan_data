@@ -153,6 +153,8 @@ class Tier:
         return \
         textwrap.dedent(f'''\
         name: {self.name}
+        participant: {self.participant}
+        annotator: {self.annotator}
         tier type: {self.tier_type.name}
         ''')  # noqa: E122
 
@@ -237,7 +239,9 @@ class Subtier(Tier):
         return \
         textwrap.dedent(f'''\
         name: {self.name}
-        paret: {self.parent.name}
+        parent: {self.parent.name}
+        participant: {self.participant}
+        annotator: {self.annotator}
         tier type: {self.tier_type.name}
         ''')  # noqa: E122
 
@@ -399,7 +403,7 @@ class Segmentations:
 
 # ===================== ACCESSORS =====================
 
-    def get_segment(self, id: Union[str, int]) -> Optional[pd.DataFrame]:
+    def get_segment(self, id: Union[str, int], deep: bool = False, named_tuple: bool = False) -> Optional[Any]:
         '''
         Find the given segment based on the segment ID.
 
@@ -409,14 +413,59 @@ class Segmentations:
         id : `str` or `int`
             The segment's ID; in the form `a\\d{1,}`, or an integer.
 
+        named_tuple: `bool`
+            Return a `pd.DataFrame` or a `namedtuple`; defaults to False.
+
+        deep: `bool`
+            Return a deep copy of the row; defaults to False.
+
         Returns
         ---
 
-        - The `pd.Series` row for the segment or `None` if no segment was found.
+        - The `pd.DataFrame` row for the segment, `nametuple` if `named_tuple=True` or `None` if no segment was found.
         '''
-        pass
+
+        form = f"a{id}" if isinstance(id, int) else id
+
+        query = self.segments[self.segments.ID == form]
+
+        if len(query) == 0:
+            return None
+
+        if deep:
+            return query.copy()
+
+        return query if not named_tuple else query.itertuples()
 
 # ===================== MUTATORS METHODS =====================
+
+    def split_segment(self, id: Union[str, int], split: Union[int, float] = 0.5):
+        '''
+        Split a segment at the given timestamp or ratio.
+
+        Parameters
+        ---
+
+        id: `str` or `int`
+            The segment's ID; in the form `a\\d{1,}`, or an integer.
+
+        split: `int` or `float`
+            Either the specific timestamp (ms) to split at (`int`) or the ratio of segments after splitting (`float` between [0, 1]); defaults to 0.75 (75%).
+        '''
+
+        form = f"a{id}" if isinstance(id, int) else id
+
+        query = self.segments.loc[0, self.segments.ID == form]
+
+        if query.END < split or (isinstance(split, float) and split > 1.0):
+            raise ValueError(f"Timestamp split {split} is too late for end time {query.END}")
+
+        # Add the segments
+        self.add_segment(tier=query.TIER, start=query.START, end=split if isinstance(split, int) else query.START + ((query.START - query.END) * split), annotation=query.TEXT)
+        self.add_segment(tier=query.TIER, start=split if isinstance(split, int) else query.START + ((query.START - query.END) * split), end=query.END, annotation=query.TEXT)
+
+        # Remove the original segment
+        self.remove_segment(id=query.ID)
 
     def add_segment(self, tier: str, start: Union[int, str] = 0, end: Union[int, str] = 100,
                     annotation: Optional[str] = ""):
