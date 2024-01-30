@@ -22,11 +22,13 @@ else:
     from typing_extensions import Literal
 
 STEREOTYPE = Literal["None", "Time_Subdivision", "Symbolic_Subdivision", "Symbolic_Association", "Included_In"]
+_STEREOTYPE = ["None", "Time_Subdivision", "Symbolic_Subdivision", "Symbolic_Association", "Included_In"]
+
 
 # ===================== TierType Class =====================
 
 
-@dataclass
+@dataclass(init=False)
 class TierType:
     '''
     Object used to store tier type information.
@@ -34,6 +36,18 @@ class TierType:
 
     name: str = "default-lt"  # LINGUISTIC_TYPE_ID
     stereotype: STEREOTYPE = "None"  # CONSTRAINTS (and TIME_ALIGNABLE)
+    time_alignable: bool = True
+
+    def __init__(self, name: str = "default-lt", stereotype: STEREOTYPE = "None"):
+
+        if not isinstance(name, str):
+            raise TypeError("name attribute is not of the correct type, str")
+
+        if stereotype not in _STEREOTYPE:
+            raise TypeError("stereotype attribute is not in STEREOTYPE")
+
+        self.name = name
+        self.stereotype = stereotype
 
     @classmethod
     def from_xml(cls, tag: ET.Element) -> TierType:
@@ -51,6 +65,9 @@ class TierType:
 
         - A `TierType` with the information from the `LINGUISTIC_TYPE` XML tag.
         '''
+
+        if tag.tag != "LINGUISTIC_TYPE":
+            raise ValueError("Incorrect tag type, not LINGUISTIC_TYPE")
 
         type_obj = TierType(tag.attrib['LINGUISTIC_TYPE_ID'])
 
