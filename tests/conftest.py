@@ -1,6 +1,7 @@
 # This file contains all test fixtures
 # Created by Alejandro Ciuba, alc307@pitt.edu
 from __future__ import annotations
+from dataclasses import dataclass
 from elan_data import ELAN_Data
 from pathlib import Path
 from typing import (Optional,
@@ -13,9 +14,10 @@ import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as ET
 
-# Package directories
+# Package directories and mocking
 ELAN_DATA = "elan_data.ELAN_Data"
 ELAN_UTILS = "elan_data.elan_utils"
+ELAN_TIERS = "elan_data.tiers.TierType"
 
 # Test directories
 TEST_DIR = "./tests"
@@ -114,6 +116,23 @@ class MockElan_Data:
             raise TypeError("Incorrect type given")
 
         return ELAN_Data("PLACEHOLDER.eaf")
+    
+
+@dataclass
+class MockTierType:
+    """
+    Basic Mock object of TierType providing the absolute basics for testing the tiers.py classes.
+
+    Assumptions
+    ---
+
+    - The attributes `name`, `stereotype` and `time_alignable` are all present.
+    - The `stereotype` attribute is among those found in `_STEREOTYPE`. 
+    """
+
+    name: str = "default-lt"  # LINGUISTIC_TYPE_ID
+    stereotype: str = "None"  # CONSTRAINTS (and TIME_ALIGNABLE)
+    time_alignable: bool = True
 
 
 @pytest.fixture()
@@ -137,8 +156,31 @@ def mock_elan() -> Generator:
 
 
 @pytest.fixture()
+def mock_tiertype() -> Generator:
+    """
+    Mock the properties of the TierType object.
+    """
+
+    mock_type = MockTierType()
+
+    with mock.patch(f"{ELAN_TIERS}", spec=True) as MockType:
+
+        mock_tt = MockType.return_value
+        mock_tt.name = mock_type.name
+        mock_tt.stereotype = mock_type.stereotype
+        mock_tt.time_alignable = mock_type.time_alignable
+
+        yield mock_tt
+
+
+@pytest.fixture()
 def mock_data() -> MockElan_Data:
     return MockElan_Data()
+
+
+@pytest.fixture()
+def mock_type() -> MockTierType:
+    return MockTierType()
 
 
 @pytest.fixture()

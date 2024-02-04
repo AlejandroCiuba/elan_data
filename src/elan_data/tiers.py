@@ -127,6 +127,23 @@ class Tier:
     annotator: str = ""
     tier_type: TierType = TierType()  # Calling with no args is the default-lt type
 
+    def __post_init__(self):
+        """
+        Type checking for dataclass fields.
+        """
+
+        if not isinstance(self.name, str):
+            raise TypeError("name is not of type str")
+
+        if not isinstance(self.participant, str):
+            raise TypeError("participant is not of type str")
+
+        if not isinstance(self.annotator, str):
+            raise TypeError("annotator is not of type str")
+
+        if not isinstance(self.tier_type, TierType):
+            raise TypeError("tier_type is not of type TierType")
+
     @classmethod
     def from_xml(cls, tag: ET.Element, tier_type: Union[ET.Element, TierType], **kwargs):
         '''
@@ -151,6 +168,9 @@ class Tier:
 
         - `**kwargs` does nothing, see `Subtier.from_xml()` notes for more information.
         '''
+
+        if tag.tag != "TIER":
+            raise ValueError("Incorrect tag type, not TIER")
 
         if "PARENT_REF" in tag.attrib:
             raise TypeError("Tried to create a Tier object from a subtier tag. Please use Subtier if there is a PARENT_ID attribute.")
@@ -190,6 +210,12 @@ class Tier:
         element.attrib["LINGUISTIC_TYPE_REF"] = self.tier_type.name
         element.attrib["TIER_ID"] = self.name
 
+        if self.participant != "":
+            element.attrib["PARTICIPANT"] = self.participant
+
+        if self.annotator != "":
+            element.attrib["ANNOTATOR"] = self.annotator
+
         return element
 
 # ===================== Subtier Class =====================
@@ -202,6 +228,16 @@ class Subtier(Tier):
     '''
 
     parent: Union[Tier, Subtier] = Tier()
+
+    def __post_init__(self):
+        """
+        Type checking for dataclass fields.
+        """
+
+        super().__post_init__()
+
+        if not isinstance(self.parent, (Tier, Subtier)):
+            raise TypeError("parent is not of type Tier or Subtier")
 
     @classmethod
     def from_xml(cls, tag: ET.Element, tier_type: Union[ET.Element, TierType], **kwargs):
@@ -237,6 +273,8 @@ class Subtier(Tier):
 
         # Cannot take a TIER tag for the parent because its TierType settings would be
         # in a different tag. Therefore, recursively making the parents is impossible.
+        if tag.tag != "TIER":
+            raise ValueError("Incorrect tag type, not TIER")
 
         if "PARENT_REF" not in tag.attrib:
             raise TypeError("Tried to create a Subtier object from a tier tag. Please use Tier if there is no PARENT_ID attribute.")
