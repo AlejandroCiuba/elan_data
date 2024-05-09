@@ -1,21 +1,21 @@
 from __future__ import annotations
-from elan_data.tiers import (TierType,
+from elan_data.tiers import (TierType,  # noqa F401
                              Tier,
                              Subtier,
-                             Segmentations, 
+                             Segmentations,
                              STEREOTYPE,
                              _STEREOTYPE, )
 from pathlib import Path
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazyfixture import lazy_fixture  # noqa F401
 from typing import (Any,
-                    Optional,
                     Union, )
 
 import pytest
 import textwrap
+import typing
 
-import pandas as pd
 import xml.etree.ElementTree as ET
+
 
 class TestTierType:
 
@@ -28,7 +28,7 @@ class TestTierType:
     @pytest.fixture()
     def setup_tag(self, eaf: Path) -> ET.Element:
         with open(eaf, 'r') as src:
-             return ET.parse(src).find('.//LINGUISTIC_TYPE')
+            return typing.cast(ET.Element, ET.parse(src).find('.//LINGUISTIC_TYPE'))
 
     # ===================== TEST CONSTRUCTORS =====================
 
@@ -56,12 +56,12 @@ class TestTierType:
     @pytest.mark.parametrize("invalid_name", [Path("test"), 123])
     def test_invalid_name_constructor(self, invalid_name: Any) -> None:
         with pytest.raises(TypeError):
-            tt = TierType(name=invalid_name)
+            tt = TierType(name=invalid_name)  # noqa: F841
 
     @pytest.mark.parametrize("invalid_stereotype", ["NONE", "Time Subdivision", 123])
     def test_invalid_stereotype_constructor(self, invalid_stereotype: Any) -> None:
         with pytest.raises(TypeError):
-            tt = TierType(stereotype=invalid_stereotype)
+            tt = TierType(stereotype=invalid_stereotype)  # noqa: F841
 
     @pytest.mark.parametrize("stereotype", ["None", "Time_Subdivision"])
     def test_from_xml(self, setup_tag: ET.Element, stereotype: STEREOTYPE) -> None:
@@ -82,7 +82,7 @@ class TestTierType:
         bad_tag = ET.Element("bad", {"bad_id": "badbadbad"})
 
         with pytest.raises(ValueError):
-            tt = TierType.from_xml(bad_tag)
+            tt = TierType.from_xml(bad_tag)  # noqa: F841
 
     # ===================== TEST DUNDER METHODS =====================
 
@@ -144,7 +144,7 @@ class TestTierType:
 
 
 class TestTier:
-    
+
     # ===================== FIXTURES =====================
 
     @pytest.fixture()
@@ -154,7 +154,7 @@ class TestTier:
     @pytest.fixture()
     def setup_tag(self, eaf: Path) -> ET.Element:
         with open(eaf, 'r') as src:
-             return ET.parse(src).find('.//TIER')
+            return typing.cast(ET.Element, ET.parse(src).find('.//TIER'))
 
     # ===================== TEST CONSTRUCTORS =====================
 
@@ -172,7 +172,7 @@ class TestTier:
         assert tier.annotator == ""
         assert isinstance(tier.tier_type, TierType)
 
-    @pytest.mark.parametrize("name,participant,annotator", 
+    @pytest.mark.parametrize("name,participant,annotator",
                              [("Default", "Alejandro", "Julia"), ("New Tier", "Alejandro", "Alejandro"), ("", "", "")])
     def test_constructor_init(self, name: str, participant: str, annotator: str) -> None:
 
@@ -188,14 +188,14 @@ class TestTier:
         assert tier.annotator == annotator
         assert isinstance(tier.tier_type, TierType)
 
-    @pytest.mark.parametrize("name,participant,annotator", 
+    @pytest.mark.parametrize("name,participant,annotator",
                              [(None, "Alejandro", "Julia"), ("New Tier", None, "Alejandro"), ("", "", 123)])
     def test_constructor_invalid_params(self, name: Any, participant: Any, annotator: Any) -> None:
         with pytest.raises(TypeError):
-            tier = Tier(name=name, participant=participant, annotator=annotator)
+            tier = Tier(name=name, participant=participant, annotator=annotator)  # noqa: F841
 
-    @pytest.mark.parametrize("tiertype", 
-                             [TierType(), 
+    @pytest.mark.parametrize("tiertype",
+                             [TierType(),
                               ET.Element("LINGUISTIC_TYPE", {"TIME_ALIGNABLE": "true", "GRAPHIC_REFERENCES": "false", "LINGUISTIC_TYPE_ID": "default-lt"}), ])
     def test_from_xml(self, setup_tag: ET.Element, tiertype: Union[TierType, ET.Element]) -> None:
 
@@ -218,7 +218,7 @@ class TestTier:
                                          ET.Element("TIER", {"PARENT_REF": "test this"}), ])
     def test_invalid_from_xml(self, bad_tag: ET.Element) -> None:
         with pytest.raises((ValueError, TypeError)):
-            tier = Tier.from_xml(tag=bad_tag, tier_type=TierType())
+            tier = Tier.from_xml(tag=bad_tag, tier_type=TierType())  # noqa: F841
 
     # ===================== TEST DUNDER METHODS =====================
 
@@ -244,7 +244,7 @@ class TestTier:
     # ===================== OTHER METHODS =====================
 
     # as_xml(self)
- 
+
     @pytest.mark.parametrize("participant,annotator", [("", ""), ("Alejandro", "Julia")])
     def test_as_xml(self, setup_tier: Tier, participant: str, annotator: str) -> None:
 
@@ -254,7 +254,7 @@ class TestTier:
         tag = setup_tier.as_xml()
 
         assert hasattr(tag, "attrib")
-        
+
         assert tag.tag == "TIER"
         assert tag.attrib["TIER_ID"] == setup_tier.name
         assert tag.attrib["LINGUISTIC_TYPE_REF"] == setup_tier.tier_type.name
@@ -303,7 +303,7 @@ class TestSubtier:
         assert isinstance(subtier.tier_type, TierType)
         assert isinstance(subtier.parent, (Tier, Subtier))
 
-    @pytest.mark.parametrize("name,participant,annotator", 
+    @pytest.mark.parametrize("name,participant,annotator",
                              [("Default", "Alejandro", "Julia"), ("New Tier", "Alejandro", "Alejandro"), ("", "", "")])
     def test_constructor_init(self, name: str, participant: str, annotator: str) -> None:
 
@@ -321,14 +321,14 @@ class TestSubtier:
         assert isinstance(subtier.tier_type, TierType)
         assert isinstance(subtier.parent, (Tier, Subtier))
 
-    @pytest.mark.parametrize("name,participant,annotator", 
+    @pytest.mark.parametrize("name,participant,annotator",
                              [(None, "Alejandro", "Julia"), ("New Tier", None, "Alejandro"), ("", "", 123)])
     def test_constructor_invalid_params(self, name: Any, participant: Any, annotator: Any) -> None:
         with pytest.raises(TypeError):
-            subtier = Subtier(name=name, participant=participant, annotator=annotator)
+            subtier = Subtier(name=name, participant=participant, annotator=annotator)  # noqa: F841
 
-    # @pytest.mark.parametrize("tiertype", 
-    #                          [TierType(), 
+    # @pytest.mark.parametrize("tiertype",
+    #                          [TierType(),
     #                           ET.Element("LINGUISTIC_TYPE", {"TIME_ALIGNABLE": "true", "GRAPHIC_REFERENCES": "false", "LINGUISTIC_TYPE_ID": "default-lt"}), ])
     # def test_from_xml(self, setup_tag: ET.Element, tiertype: Union[TierType, ET.Element]) -> None:
 
@@ -355,12 +355,12 @@ class TestSubtier:
 
     # ===================== TEST DUNDER METHODS =====================
 
-    def test_repr(self, setup_subtier: Tier) -> None:
+    def test_repr(self, setup_subtier: Subtier) -> None:
 
         test_repr = repr(setup_subtier)
         assert isinstance(test_repr, str)
 
-    def test_str(self, setup_subtier: Tier) -> None:
+    def test_str(self, setup_subtier: Subtier) -> None:
 
         test_str = str(setup_subtier)
 
@@ -378,9 +378,9 @@ class TestSubtier:
     # ===================== OTHER METHODS =====================
 
     # as_xml(self)
- 
+
     @pytest.mark.parametrize("participant,annotator", [("", ""), ("Alejandro", "Julia")])
-    def test_as_xml(self, setup_subtier: Tier, participant: str, annotator: str) -> None:
+    def test_as_xml(self, setup_subtier: Subtier, participant: str, annotator: str) -> None:
 
         setup_subtier.participant = participant
         setup_subtier.annotator = annotator
@@ -388,7 +388,7 @@ class TestSubtier:
         tag = setup_subtier.as_xml()
 
         assert hasattr(tag, "attrib")
-        
+
         assert tag.tag == "TIER"
         assert tag.attrib["TIER_ID"] == setup_subtier.name
         assert tag.attrib["LINGUISTIC_TYPE_REF"] == setup_subtier.tier_type.name

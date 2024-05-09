@@ -80,116 +80,113 @@ DEFAULT_TIER_DATA = pd.DataFrame({'TIER_ID':       [],
                                   'DURATION':      [], })
 
 
-# class MockElan_Data:
-#     """
-#     Basic Mock object of Elan_Data providing the absolute basics for testing elan_utils.
+class MockElan_Data:
+    """
+    Basic Mock object of Elan_Data providing the absolute basics for testing elan_utils.
 
-#     Assumptions
-#     ---
+    Assumptions
+    ---
 
-#     - `pd.DataFrame` and all its respective functions work as expected.
-#     - Likewise with `xml.etree.ElementTree` (and its `ElementTree` object), `pathlib.Path`, and the built-in `list`.
-#     """
+    - `pd.DataFrame` and all its respective functions work as expected.
+    - Likewise with `xml.etree.ElementTree` (and its `ElementTree` object), `pathlib.Path`, and the built-in `list`.
+    """
 
-#     def __init__(self, init_df: bool = True) -> None:
+    def __init__(self, init_df: bool = True) -> None:
 
-#         with open(EAF, "r", encoding="UTF-8") as src:
-#             text = "\n".join(src.readlines(-1))
-#             self.tree = ET.ElementTree(ET.fromstring(text))
+        with open(EAF, "r", encoding="UTF-8") as src:
+            text = "\n".join(src.readlines(-1))
+            self.tree = ET.ElementTree(ET.fromstring(text))
 
-#         self.file: Path = Path(EAF)
-#         self.audio: Optional[Path] = Path(AUDIO)
-#         self.tier_names: list[str] = TIER_NAMES
+        self.file: Path = Path(EAF)
+        self.audio: Optional[Path] = Path(AUDIO)
+        self.tier_names: list[str] = TIER_NAMES
 
-#         if init_df:
-#             self.tier_data = TIER_DATA
-#             self.df_status = True
-#         else:
-#             self.tier_data = pd.DataFrame()
-#             self.df_status = False
+        if init_df:
+            self.tier_data = TIER_DATA
+            self.df_status = True
+        else:
+            self.tier_data = pd.DataFrame()
+            self.df_status = False
 
-#     @staticmethod
-#     def from_file(file: str, init_df: bool) -> ELAN_Data:
+    @staticmethod
+    def from_file(file: str, init_df: bool) -> ELAN_Data:
 
-#         # None of this is actually used, might be useful to see if methods/functions return the correct type however.
-#         if not isinstance(file, (str, Path)):
-#             raise TypeError("Incorrect type given")
+        # None of this is actually used, might be useful to see if methods/functions return the correct type however.
+        if not isinstance(file, (str, Path)):
+            raise TypeError("Incorrect type given")
 
-#         return ELAN_Data("PLACEHOLDER.eaf")
-
-
-# @dataclass
-# class MockTierType:
-#     """
-#     Basic Mock object of TierType providing the absolute basics for testing the tiers.py classes.
-
-#     Assumptions
-#     ---
-
-#     - The attributes `name`, `stereotype` and `time_alignable` are all present.
-#     - The `stereotype` attribute is among those found in `_STEREOTYPE`.
-#     """
-
-#     name: str = "default-lt"  # LINGUISTIC_TYPE_ID
-#     stereotype: str = "None"  # CONSTRAINTS (and TIME_ALIGNABLE)
-#     time_alignable: bool = True
+        return ELAN_Data("PLACEHOLDER.eaf")
 
 
-# @pytest.fixture()
-# def mock_elan() -> Generator:
-#     """
-#     Mocks the properties and methods of the ELAN_Data object.
-#     """
+@dataclass
+class MockTierType:
+    """
+    Basic Mock object of TierType providing the absolute basics for testing the tiers.py classes.
 
-#     mock_data = MockElan_Data()
+    Assumptions
+    ---
 
-#     # Mimic values
-#     with mock.patch(f"{ELAN_DATA}", spec=True) as MockElan:
-#         mock_ed = MockElan.return_value
-#         mock_ed.file = mock_data.file
-#         mock_ed.audio = mock_data.audio
-#         mock_ed.tree = mock_data.tree
-#         mock_ed.tier_names = mock_data.tier_names
-#         mock_ed.tier_data = mock_data.tier_data
+    - The attributes `name`, `stereotype` and `time_alignable` are all present.
+    - The `stereotype` attribute is among those found in `_STEREOTYPE`.
+    """
 
-#         yield mock_ed
+    name: str = "default-lt"  # LINGUISTIC_TYPE_ID
+    stereotype: str = "None"  # CONSTRAINTS (and TIME_ALIGNABLE)
+    time_alignable: bool = True
 
 
-# @pytest.fixture()
-# def mock_tiertype() -> Generator:
-#     """
-#     Mock the properties of the TierType object.
-#     """
+@pytest.fixture()
+def mock_elan() -> Generator:
+    """
+    Mocks the properties and methods of the ELAN_Data object.
+    """
 
-#     mock_type = MockTierType()
+    mock_data = MockElan_Data()
 
-#     with mock.patch(f"{ELAN_TIERS}", spec=True) as MockType:
+    # Mimic values
+    with mock.patch(f"{ELAN_DATA}", spec=True) as MockElan:
+        mock_ed = MockElan.return_value
+        mock_ed.file = mock_data.file
+        mock_ed.audio = mock_data.audio
+        mock_ed.tree = mock_data.tree
+        mock_ed.tier_names = mock_data.tier_names
+        mock_ed.tier_data = mock_data.tier_data
 
-#         mock_tt = MockType.return_value
-#         mock_tt.name = mock_type.name
-#         mock_tt.stereotype = mock_type.stereotype
-#         mock_tt.time_alignable = mock_type.time_alignable
-
-#         yield mock_tt
-
-
-# @pytest.fixture()
-# def mock_data() -> MockElan_Data:
-#     return MockElan_Data()
+        yield mock_ed
 
 
-# @pytest.fixture()
-# def mock_type() -> MockTierType:
-#     return MockTierType()
+@pytest.fixture()
+def mock_tiertype() -> Generator:
+    """
+    Mock the properties of the TierType object.
+    """
+
+    mock_type = MockTierType()
+
+    with mock.patch(f"{ELAN_TIERS}", spec=True) as MockType:
+
+        mock_tt = MockType.return_value
+        mock_tt.name = mock_type.name
+        mock_tt.stereotype = mock_type.stereotype
+        mock_tt.time_alignable = mock_type.time_alignable
+
+        yield mock_tt
+
+
+@pytest.fixture()
+def mock_data() -> MockElan_Data:
+    return MockElan_Data()
+
+
+@pytest.fixture()
+def mock_type() -> MockTierType:
+    return MockTierType()
 
 
 @pytest.fixture()
 def tree() -> ET.ElementTree:
-
-    with open(EAF, "r", encoding="UTF-8") as src:
-
-        text = "\n".join(src.readlines(-1))
-        return ET.ElementTree(ET.fromstring(text))
+    mock = MockElan_Data()
+    return mock.tree
 
 
 @pytest.fixture()
@@ -334,4 +331,7 @@ def default_tier_data() -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    pass
+
+    test_mock = MockElan_Data()
+    print(test_mock.tier_data)
+    print(test_mock.tier_data.info())

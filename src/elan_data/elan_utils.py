@@ -57,13 +57,11 @@ def eaf_to_rttm(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
     else:
         eaf = src
 
-    eaf.df_status = True
-
     with open(dst, "w+", encoding=encoding) as rttm:
 
         name = eaf.file.name[:-4]
 
-        for row in eaf.tier_data.itertuples():
+        for row in eaf.segmentations.segments.itertuples():
             if row.TIER_ID not in filter:
                 fields = [
                     "SPEAKER",
@@ -123,10 +121,8 @@ def eaf_to_text(src: Union[str, Path, ELAN_Data], dst: Union[str, Path],
     else:
         eaf = src
 
-    eaf.df_status = True
-
     with open(dst, "w+", encoding=encoding) as txt:
-        for row in eaf.tier_data.itertuples():
+        for row in eaf.segmentations.segments.itertuples():
             if row.TIER_ID not in filter:
                 line = formatter(row)
                 txt.write(line)

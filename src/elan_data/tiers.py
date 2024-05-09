@@ -2,7 +2,6 @@
 # Created by Alejandro Ciuba, alc307@pitt.edu
 from __future__ import annotations
 from dataclasses import dataclass
-from elan_data import _ELAN_ENCODING
 from pathlib import Path
 from typing import (Any,
                     Optional,
@@ -24,6 +23,8 @@ else:
 STEREOTYPE = Literal["None", "Time_Subdivision", "Symbolic_Subdivision", "Symbolic_Association", "Included_In"]
 _STEREOTYPE = ["None", "Time_Subdivision", "Symbolic_Subdivision", "Symbolic_Association", "Included_In"]
 
+
+_ELAN_ENCODING = "UTF-8"
 
 # ===================== TierType Class =====================
 
@@ -128,9 +129,9 @@ class Tier:
     tier_type: TierType = TierType()  # Calling with no args is the default-lt type
 
     def __post_init__(self):
-        """
+        '''
         Type checking for dataclass fields.
-        """
+        '''
 
         if not isinstance(self.name, str):
             raise TypeError("name is not of type str")
@@ -230,9 +231,9 @@ class Subtier(Tier):
     parent: Union[Tier, Subtier] = Tier()
 
     def __post_init__(self):
-        """
+        '''
         Type checking for dataclass fields.
-        """
+        '''
 
         super().__post_init__()
 
@@ -326,7 +327,7 @@ class Segmentations:
     COLUMNS: set[str] = {'TIER', 'START', 'END', 'TEXT', 'ID', 'DURATION'}
     _ID: int = 1  # Update segments to the "best" ID for the XML
 
-    def __init__(self, data: Optional[Union[dict[str, list[Any]], pd.DataFrame]]):
+    def __init__(self, data: Optional[Union[dict[str, list[Any]], pd.DataFrame]]=None):
         '''
         Default constructor.
 
