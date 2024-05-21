@@ -24,17 +24,8 @@
             </ALIGNABLE_ANNOTATION>
         </ANNOTATION>
     </TIER>
-    <TIER DEFAULT_LOCALE="en" LINGUISTIC_TYPE_REF="default-lt"
-        PARTICIPANT="Alejandro" TIER_ID="Subtier">
-        <ANNOTATION>
-            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a2"
-                TIME_SLOT_REF1="ts2" TIME_SLOT_REF2="ts3">
-                <ANNOTATION_VALUE/>
-            </ALIGNABLE_ANNOTATION>
-        </ANNOTATION>
-    </TIER>
     <TIER DEFAULT_LOCALE="en" LINGUISTIC_TYPE_REF="comments"
-        PARENT_REF="Alejandro" PARTICIPANT="Alejandro" TIER_ID="Subtier-cp">
+        PARENT_REF="Alejandro" PARTICIPANT="Alejandro" TIER_ID="Subtier">
         <ANNOTATION>
             <ALIGNABLE_ANNOTATION ANNOTATION_ID="a3"
                 TIME_SLOT_REF1="ts1" TIME_SLOT_REF2="ts4">

@@ -84,6 +84,9 @@ class TierType:
         stereotype: {self.stereotype}
         ''')  # noqa: E122
 
+    def __hash__(self) -> int:
+        return hash(self.name)
+
     def as_xml(self) -> ET.Element:
         '''
         Takes the information of the tier type as a LINGUISTIC_TYPE XML tag.
@@ -196,6 +199,9 @@ class Tier:
         tier type: {self.tier_type.name}
         ''')  # noqa: E122
 
+    def __hash__(self) -> int:
+        return hash(self.name)
+
     def as_xml(self) -> ET.Element:
         '''
         Takes the information of the tier type as a LINGUISTIC_TYPE XML tag.
@@ -280,6 +286,9 @@ class Subtier(Tier):
         if "PARENT_REF" not in tag.attrib:
             raise TypeError("Tried to create a Subtier object from a tier tag. Please use Tier if there is no PARENT_ID attribute.")
 
+        if tag.attrib["PARENT_REF"] != kwargs["parent"].name:
+            raise TypeError("Parent does not match metadata")
+
         tier_type = tier_type if isinstance(tier_type, TierType) else TierType.from_xml(tier_type)
         subtier = cls(name=tag.attrib['TIER_ID'], tier_type=tier_type, parent=kwargs['parent'])
 
@@ -326,8 +335,16 @@ class Segmentations:
 
     COLUMNS: set[str] = {'TIER', 'START', 'END', 'TEXT', 'ID', 'DURATION'}
     _ID: int = 1  # Update segments to the "best" ID for the XML
+    TYPES: dict[str, type] = {'TIER':     str,
+                              'START':    np.int32,
+                              'END':      np.int32,
+                              'TEXT':     str,
+                              'ID':       str,
+                              'DURATION': np.int32, }
 
-    def __init__(self, data: Optional[Union[dict[str, list[Any]], pd.DataFrame]]=None):
+    segments: pd.DataFrame
+
+    def __init__(self, data: Optional[Union[dict[str, list[Any]], pd.DataFrame]] = None):
         '''
         Default constructor.
 
@@ -354,6 +371,7 @@ class Segmentations:
         '''
 
         if data is not None:
+
             if isinstance(data, dict):
                 self.segments: pd.DataFrame = pd.DataFrame({'TIER':     data['TIER'],
                                                             'START':    data['START'],
@@ -364,6 +382,8 @@ class Segmentations:
             elif isinstance(data, pd.DataFrame):
                 self.segments = data.copy(deep=True).drop(columns=set(data.columns).difference(self.COLUMNS))
 
+            else:
+                raise TypeError(f"data cannot be of type {type(data)}")
             # Reinforce column types
             self._reinforce()
 
@@ -371,12 +391,7 @@ class Segmentations:
             self._ID = self.segments.ID.max()
 
         else:
-            self.segments = pd.DataFrame.astype({'TIER':     str,
-                                                 'START':    np.int32,
-                                                 'END':      np.int32,
-                                                 'TEXT':     str,
-                                                 'ID':       str,
-                                                 'DURATION': np.int32, })
+            self.segments = pd.DataFrame(columns=self.COLUMNS).astype(dtype=self.TYPES)
 
     @typing.no_type_check  # Avoid unnecessary casting to clean-up code
     @classmethod
@@ -596,10 +611,14 @@ class Segmentations:
         ---
 
         - `Segmentations.segments` must already exist.
+
+        Notes
+        ---
+
+        - Raises `TypeError` if `self.segments` is not initialized.
         '''
-        self.segments = self.segments.astype({'TIER':     str,
-                                              'START':    np.int32,
-                                              'END':      np.int32,
-                                              'TEXT':     str,
-                                              'ID':       str,
-                                              'DURATION': np.int32, })
+
+        if self.segments is None:
+            raise TypeError("segments has not been initialized")
+
+        self.segments = self.segments.astype(dtype=self.TYPES)

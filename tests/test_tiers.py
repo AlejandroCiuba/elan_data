@@ -14,6 +14,8 @@ import pytest
 import textwrap
 import typing
 
+import pandas as pd
+import numpy as np
 import xml.etree.ElementTree as ET
 
 
@@ -103,6 +105,9 @@ class TestTierType:
         assert isinstance(test_str, str)
         assert test_str == answer
 
+    def test_hash(self, setup_tiertype: TierType) -> None:
+        assert hash(setup_tiertype.name) == hash(setup_tiertype)
+
     # ===================== TEST PROPERTIES =====================
 
     def test_name(self, setup_tiertype: TierType) -> None:
@@ -188,11 +193,11 @@ class TestTier:
         assert tier.annotator == annotator
         assert isinstance(tier.tier_type, TierType)
 
-    @pytest.mark.parametrize("name,participant,annotator",
-                             [(None, "Alejandro", "Julia"), ("New Tier", None, "Alejandro"), ("", "", 123)])
-    def test_constructor_invalid_params(self, name: Any, participant: Any, annotator: Any) -> None:
+    @pytest.mark.parametrize("name,participant,annotator,tier_type",
+                             [(None, "Alejandro", "Julia", TierType()), ("New Tier", None, "Alejandro", TierType()), ("", "", 123, TierType()), ("1", "2", "3", None)])
+    def test_constructor_invalid_params(self, name: Any, participant: Any, annotator: Any, tier_type: Any) -> None:
         with pytest.raises(TypeError):
-            tier = Tier(name=name, participant=participant, annotator=annotator)  # noqa: F841
+            tier = Tier(name=name, participant=participant, annotator=annotator, tier_type=tier_type)  # noqa: F841
 
     @pytest.mark.parametrize("tiertype",
                              [TierType(),
@@ -241,6 +246,9 @@ class TestTier:
         assert isinstance(test_str, str)
         assert test_str == answer
 
+    def test_hash(self, setup_tier: Tier) -> None:
+        assert hash(setup_tier.name) == hash(setup_tier)
+
     # ===================== OTHER METHODS =====================
 
     # as_xml(self)
@@ -279,11 +287,16 @@ class TestSubtier:
     def setup_subtier(self) -> Subtier:
         return Subtier(tier_type=TierType(), parent=Tier())
 
-    # TODO: Add subtiers in the key.eaf ELAN file for testing
-    # @pytest.fixture()
-    # def setup_tag(self, eaf: Path) -> ET.Element:
-    #     with open(eaf, 'r') as src:
-    #          return ET.parse(src).find('.//TIER')
+    @pytest.fixture()
+    def setup_tags(self, eaf_sub: Path) -> tuple[ET.Element, ET.Element]:
+
+        with open(eaf_sub, 'r') as src:
+            subtier = ET.parse(src).find(".//*[@TIER_ID='Subtier']")
+
+        with open(eaf_sub, 'r') as src:
+            tier = ET.parse(src).find(".//*[@TIER_ID='Alejandro']")
+
+        return (tier, subtier)
 
     # ===================== TEST CONSTRUCTORS =====================
 
@@ -321,37 +334,36 @@ class TestSubtier:
         assert isinstance(subtier.tier_type, TierType)
         assert isinstance(subtier.parent, (Tier, Subtier))
 
-    @pytest.mark.parametrize("name,participant,annotator",
-                             [(None, "Alejandro", "Julia"), ("New Tier", None, "Alejandro"), ("", "", 123)])
-    def test_constructor_invalid_params(self, name: Any, participant: Any, annotator: Any) -> None:
+    @pytest.mark.parametrize("name,participant,annotator,parent",
+                             [(None, "Alejandro", "Julia", Tier()), ("New Tier", None, "Alejandro", Subtier()), ("", "", 123, Tier()), ("", "", "", None)])
+    def test_constructor_invalid_params(self, name: Any, participant: Any, annotator: Any, parent: Any) -> None:
         with pytest.raises(TypeError):
-            subtier = Subtier(name=name, participant=participant, annotator=annotator)  # noqa: F841
+            subtier = Subtier(name=name, participant=participant, annotator=annotator, parent=parent)  # noqa: F841
 
-    # @pytest.mark.parametrize("tiertype",
-    #                          [TierType(),
-    #                           ET.Element("LINGUISTIC_TYPE", {"TIME_ALIGNABLE": "true", "GRAPHIC_REFERENCES": "false", "LINGUISTIC_TYPE_ID": "default-lt"}), ])
-    # def test_from_xml(self, setup_tag: ET.Element, tiertype: Union[TierType, ET.Element]) -> None:
+    def test_from_xml(self, setup_tags: ET.Element) -> None:
 
-    #     setup_tag.attrib["PARTICIPANT"] = "Alejandro"
-    #     setup_tag.attrib["ANNOTATOR"] = "Julia"
+        setup_tags[1].attrib["PARTICIPANT"] = "Alejandro"
+        setup_tags[1].attrib["ANNOTATOR"] = "Julia"
 
-    #     tier = Tier.from_xml(tag=setup_tag, tier_type=tiertype)
+        subtier = Subtier.from_xml(tag=setup_tags[1], tier_type=TierType(), parent=Tier(setup_tags[0].attrib['TIER_ID']))
 
-    #     assert hasattr(tier, "name")
-    #     assert hasattr(tier, "participant")
-    #     assert hasattr(tier, "annotator")
-    #     assert hasattr(tier, "tier_type")
+        assert hasattr(subtier, "name")
+        assert hasattr(subtier, "participant")
+        assert hasattr(subtier, "annotator")
+        assert hasattr(subtier, "tier_type")
+        assert hasattr(subtier, "parent")
 
-    #     assert tier.name == "default"
-    #     assert tier.participant == "Alejandro"
-    #     assert tier.annotator == "Julia"
-    #     assert tier.tier_type is not None
+        assert subtier.name == "Subtier"
+        assert subtier.participant == "Alejandro"
+        assert subtier.annotator == "Julia"
+        assert isinstance(subtier.tier_type, TierType)
 
-    # @pytest.mark.parametrize("bad_tag", [ET.Element("bad", {"bad_id": "badbadbad"}),
-    #                                      ET.Element("TIER", {"PARENT_REF": "test this"}), ])
-    # def test_invalid_from_xml(self, bad_tag: ET.Element) -> None:
-    #     with pytest.raises((ValueError, TypeError)):
-    #         tier = Tier.from_xml(tag=bad_tag, tier_type=TierType())
+    @pytest.mark.parametrize("bad_tag", [ET.Element("bad", {"bad_id": "badbadbad"}),
+                                         ET.Element("TIER", {"PARENT_REF": "test this"}),
+                                         ET.Element("TIER", {"bad_id": "badbadbad"})])
+    def test_invalid_from_xml(self, bad_tag: ET.Element) -> None:
+        with pytest.raises((ValueError, TypeError)):
+            tier = Subtier.from_xml(tag=bad_tag, tier_type=TierType(), parent=Tier())
 
     # ===================== TEST DUNDER METHODS =====================
 
@@ -408,4 +420,66 @@ class TestSubtier:
 
 
 class TestSegmentations:
-    pass
+
+    # ===================== FIXTURES =====================
+
+    TYPES: dict[str, type] = {'TIER':     object,
+                              'START':    np.int32,
+                              'END':      np.int32,
+                              'TEXT':     object,
+                              'ID':       object,
+                              'DURATION': np.int32, }
+
+    @pytest.fixture()
+    def setup_dictionary(self) -> dict:
+        return {'TIER':     ['TEST_TIER'],
+                'START':    [0],
+                'END':      [5],
+                'TEXT':     ['TEST TEXT'],
+                'ID':       ['a3'],
+                'DURATION': [5], }
+
+    @pytest.fixture()
+    def setup_dataframe(self, setup_dictionary: dict) -> pd.DataFrame:
+        return pd.DataFrame(setup_dictionary)
+
+    # ===================== TEST CONSTRUCTORS =====================
+
+    def test_constructor_default_params(self) -> None:
+
+        seg = Segmentations()
+
+        assert hasattr(seg, "COLUMNS")
+        assert hasattr(seg, "_ID")
+        assert hasattr(seg, "segments")
+
+        for column in seg.segments.columns:
+            assert column in seg.COLUMNS
+
+        for column in seg.COLUMNS:
+            assert seg.segments[column].empty
+
+        for column in self.TYPES:
+            assert seg.segments[column].dtype == self.TYPES[column]
+
+    @pytest.mark.parametrize("data", [lazy_fixture("setup_dictionary"), lazy_fixture("setup_dataframe")])
+    def test_constructor_init(self, data: Any) -> None:
+
+        seg = Segmentations(data=data)
+
+        assert hasattr(seg, "COLUMNS")
+        assert hasattr(seg, "_ID")
+        assert hasattr(seg, "segments")
+
+        for column in seg.segments.columns:
+            assert column in seg.COLUMNS
+
+        for column in seg.COLUMNS:
+            if isinstance(data, dict):
+                assert seg.segments[column].tolist() == data[column]
+            else:
+                assert seg.segments[column].eq(data[column]).all()
+
+    def test_constructor_invalid_params(self) -> None:
+        with pytest.raises(TypeError):
+            seg = Segmentations(data=12)  # noqa: F841

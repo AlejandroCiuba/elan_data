@@ -72,7 +72,6 @@ class ELAN_Data:
     names: set[str]  # All tier names
     segmentations: Segmentations
 
-
 # ===================== INITIALIZATION METHODS =====================
 
     def __init__(self, file: Union[str, Path]):
@@ -233,7 +232,7 @@ class ELAN_Data:
             File path to the associated audio file.
 
         tiers : `list[str]`
-            List of strings containing all 
+            List of strings containing all
 
         remove_default : `bool`
             No default tier upon creation; defaults to False.
@@ -263,11 +262,10 @@ class ELAN_Data:
         ed_obj._modified = False
 
         return ed_obj
-    
+
 # ===================== PRIVATE METHODS =====================
 
-    def _extract_tiers(self, tree: ET.ElementTree) \
-    -> tuple[set[Tier], set[Subtier], set[TierType], set[str]]:
+    def _extract_tiers(self, tree: ET.ElementTree) -> tuple[set[Tier], set[Subtier], set[TierType], set[str]]:
         '''
         Extract all tier information from an ELAN-based element tree.
 
@@ -276,7 +274,7 @@ class ELAN_Data:
 
         tree: `ET.ElementTree`
             The tree to parse
-        
+
         Returns
         ---
 
@@ -320,11 +318,11 @@ class ELAN_Data:
 
                 else:
                     raise ValueError(f"{element.attrib['TIER_ID']} has unknown Linguistic Type Reference {type_name}")
-                
+
         if not subtier_eles:
             return tier_list, subtiers, tier_types, set(tier_names.keys())
 
-        # All information should be ready to collect        
+        # All information should be ready to collect
         for element in subtier_eles:
 
             tier_type = type_check[element.attrib['LINGUISTIC_TYPE_REF']]
@@ -334,8 +332,6 @@ class ELAN_Data:
             tier_names[element.attrib['TIER_ID']] = subtier
 
         return tier_list, subtiers, tier_types, set(tier_names.keys())
-
-
 
 # ===================== DUNDER METHODS =====================
 
@@ -530,7 +526,7 @@ class ELAN_Data:
 
     def add_tiers(self, tiers: Optional[Sequence[str]], init_df: bool = True):
         '''
-        Add a list of 
+        Add a list of
 
         Parameters
         ---
@@ -607,7 +603,7 @@ class ELAN_Data:
 
                         self.tiers.remove(tier)
                         return
-                    
+
                 for subtier in self.subtiers:
 
                     if subtier.name == name:
@@ -854,7 +850,7 @@ class ELAN_Data:
 #         ---
 
 #         tier : `str`
-#             Name of the tier; optional. Let's users ignore segment IDs on other 
+#             Name of the tier; optional. Let's users ignore segment IDs on other
 
 #         seg_ids : `list[str]`
 #             List of segment IDs to merge, MUST be consecutive to prevent weird `.eaf` file errors.

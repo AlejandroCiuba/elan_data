@@ -80,7 +80,7 @@
             <String>http://lux17.mpi.nl/aamlr/</String>
         </pref>
         <pref key="source_audio">
-            <String>/home/computer_cat/Music/crc_test.wav</String>
+            <String>/home/computer_cat/Music/lmms_projects/another_song.wav</String>
         </pref>
     </prefGroup>
     <pref key="TimeScaleBeginTime">
@@ -100,6 +100,7 @@
     <prefList key="MultiTierViewer.TierOrder">
         <String>Alejandro</String>
         <String>Subtier</String>
+        <String>Subtier-cp</String>
     </prefList>
     <pref key="LayoutManager.SplitPaneDividerLocation">
         <Int>70</Int>
