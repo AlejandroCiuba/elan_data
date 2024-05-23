@@ -287,18 +287,19 @@ class ELAN_Data:
         type_check: dict[str, TierType] = {}
         subtier_eles: list[ET.Element] = []
         subtiers: set[Subtier] = set()
+
         # tier names; default might still be there
         # 1. Find all tiers, ignoring subtiers
         # 2. Get their Linguistic Ref
         # 3. Create objects for each
         # 4. Insert into tiers
-        for element in self.tree.findall(".//TIER"):
+        for element in tree.findall(".//TIER"):
 
             type_name = element.attrib['LINGUISTIC_TYPE_REF']
 
             if type_name not in type_check:
 
-                tier_type_ele = self.tree.find(f".//*[@LINGUISTIC_TYPE_ID='{type_name}']")
+                tier_type_ele = tree.find(f".//*[@LINGUISTIC_TYPE_ID='{type_name}']")
 
                 if isinstance(tier_type_ele, ET.Element):
 
