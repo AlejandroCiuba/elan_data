@@ -287,6 +287,8 @@ class ELAN_Data:
         subtiers: set[Subtier] = set()
         names: set[str] = set()
 
+        subtier_parents: dict[str, Union[Tier, Subtier]] = dict()
+
         # 1. Get all tier types
         # 2. Get all tiers
         # 3. Get all subtiers
@@ -313,9 +315,13 @@ class ELAN_Data:
                 participant = element.attrib["PARTICIPANT"] if "PARTICIPANT" in element.attrib else ""
                 annotator = element.attrib["ANNOTATOR"] if "ANNOTATOR" in element.attrib else ""
 
+                tier = Tier(name=name, participant=participant, annotator=annotator, tier_type=tier_type)
+
                 names.add(name)
-                tiers.add(Tier(name=name, participant=participant, annotator=annotator, tier_type=tier_type))
+                tiers.add(tier)
                 tier_types.add(tier_type)
+
+                subtier_parents[name] = tier
 
         for element in tree.findall(".//TIER"):
 
@@ -325,13 +331,7 @@ class ELAN_Data:
                 parent_name = element.attrib["PARENT_REF"]
 
                 # TODO: Inefficient, maybe make better?
-                parent = None
-                for tier in tiers:
-
-                    if parent_name == tier.name:
-
-                        parent = tier
-                        break
+                parent = subtier_parents[parent_name] if parent_name in subtier_parents else None
 
                 if parent is None:
                     raise ValueError(f"No parent for subtier {name} found")
