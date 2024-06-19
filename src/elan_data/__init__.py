@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 from elan_data.tiers import (Tier,
                              TierType,
-                             Subtier,
-                             Segmentations)
+                             Segmentations,
+                             STEREOTYPE,
+                             Subtier, )
 from typing import (Any,
                     Iterable,
                     Iterator,
@@ -281,58 +282,70 @@ class ELAN_Data:
         - `tuple[tiers, subtiers, tier types, all tier names]`
         '''
 
-        tier_list: set[Tier] = set()
-        tier_names: dict[str, Tier] = {}
         tier_types: set[TierType] = set()
-        type_check: dict[str, TierType] = {}
-        subtier_eles: list[ET.Element] = []
+        tiers: set[Tier] = set()
         subtiers: set[Subtier] = set()
+        names: set[str] = set()
 
-        # tier names; default might still be there
-        # 1. Find all tiers, ignoring subtiers
-        # 2. Get their Linguistic Ref
-        # 3. Create objects for each
-        # 4. Insert into tiers
+        # 1. Get all tier types
+        # 2. Get all tiers
+        # 3. Get all subtiers
+
+        def _get_tier_type(name: str):
+
+            element = tree.find(f".//*[@LINGUISTIC_TYPE_ID='{name}']")
+
+            if element is None:
+                raise ValueError(f"No tier type {name} exists in file")
+
+            name = element.attrib["LINGUISTIC_TYPE_ID"]
+            stereotype = element.attrib["CONSTRAINTS"] if "CONSTRAINTS" in element.attrib else "None"
+
+            return TierType(name=name, stereotype=typing.cast(STEREOTYPE, stereotype))
+
         for element in tree.findall(".//TIER"):
 
-            type_name = element.attrib['LINGUISTIC_TYPE_REF']
+            if "PARENT_REF" not in element.attrib:
 
-            if type_name not in type_check:
+                name = element.attrib["TIER_ID"]
+                tier_type = _get_tier_type(element.attrib["LINGUISTIC_TYPE_REF"])
 
-                tier_type_ele = tree.find(f".//*[@LINGUISTIC_TYPE_ID='{type_name}']")
+                participant = element.attrib["PARTICIPANT"] if "PARTICIPANT" in element.attrib else ""
+                annotator = element.attrib["ANNOTATOR"] if "ANNOTATOR" in element.attrib else ""
 
-                if isinstance(tier_type_ele, ET.Element):
+                names.add(name)
+                tiers.add(Tier(name=name, participant=participant, annotator=annotator, tier_type=tier_type))
+                tier_types.add(tier_type)
 
-                    tier_type = TierType.from_xml(tag=tier_type_ele)
-                    tier_types.add(tier_type)
-                    type_check[type_name] = tier_type
+        for element in tree.findall(".//TIER"):
 
-                    # Skip and save for later if it is a subtier
-                    if "PARENT_REF" not in element.attrib:
+            if "PARENT_REF" in element.attrib:
 
-                        tier = Tier.from_xml(tag=element, tier_type=tier_type)
-                        tier_names[element.attrib['TIER_ID']] = tier
-                        tier_list.add(tier)
+                name = element.attrib["TIER_ID"]
+                parent_name = element.attrib["PARENT_REF"]
 
-                    else:
-                        subtier_eles.append(element)
+                # TODO: Inefficient, maybe make better?
+                parent = None
+                for tier in tiers:
 
-                else:
-                    raise ValueError(f"{element.attrib['TIER_ID']} has unknown Linguistic Type Reference {type_name}")
+                    if parent_name == tier.name:
 
-        if not subtier_eles:
-            return tier_list, subtiers, tier_types, set(tier_names.keys())
+                        parent = tier
+                        break
 
-        # All information should be ready to collect
-        for element in subtier_eles:
+                if parent is None:
+                    raise ValueError(f"No parent for subtier {name} found")
 
-            tier_type = type_check[element.attrib['LINGUISTIC_TYPE_REF']]
-            parent = tier_names[element.attrib['PARENT_REF']]
-            subtier = Subtier.from_xml(tag=element, tier_type=tier_type, parent=parent)
-            subtiers.add(subtier)
-            tier_names[element.attrib['TIER_ID']] = subtier
+                tier_type = _get_tier_type(element.attrib["LINGUISTIC_TYPE_REF"])
 
-        return tier_list, subtiers, tier_types, set(tier_names.keys())
+                participant = element.attrib["PARTICIPANT"] if "PARTICIPANT" in element.attrib else ""
+                annotator = element.attrib["ANNOTATOR"] if "ANNOTATOR" in element.attrib else ""
+
+                names.add(name)
+                subtiers.add(Subtier(name=name, participant=participant, annotator=annotator, tier_type=tier_type, parent=parent))
+                tier_types.add(tier_type)
+
+        return tiers, subtiers, tier_types, names
 
 # ===================== DUNDER METHODS =====================
 
