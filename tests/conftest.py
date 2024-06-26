@@ -38,9 +38,9 @@ TXT_FORMATTED = f"{KEYS}/key-formatted.txt"
 # Keys - Mock data setup
 TIER_NAMES = ["default", "creator", "test_2", "THE FINAL TIER"]
 TIER_DATA = pd.read_csv(f"{KEYS}/key.csv", keep_default_na=False).astype({'START': np.int32,
-                                                                          'STOP': np.int32,
-                                                                          'SEGMENT_ID': str,
-                                                                          'TIER_ID': 'category',
+                                                                          'END': np.int32,
+                                                                          'ID': str,
+                                                                          'TIER': 'category',
                                                                           'TEXT': str,
                                                                           'DURATION': np.int32, })
 

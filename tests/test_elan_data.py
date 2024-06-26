@@ -56,6 +56,31 @@ class TestElan_Data:
         assert ed.audio is None
         assert ed.segmentations.segments.empty
 
+    @pytest.mark.parametrize("plhldr", [lazy_fixture("placeholder"), lazy_fixture("placeholder_str")])
+    def test_constructor_no_minimum(self, plhldr: Union[str, Path], minimum_elan: ET.ElementTree,
+                                    default_tier_list: list[str], default_tier_data: pd.DataFrame) -> None:
+
+        ed = ELAN_Data(file=plhldr, minimum=False)
+
+        # Assert existence of necessary attributes
+        assert hasattr(ed, "_modified")
+        assert hasattr(ed, "file")
+        assert hasattr(ed, "tree")
+        assert hasattr(ed, "names")
+        assert hasattr(ed, "audio")
+        assert hasattr(ed, "segmentations")
+        assert hasattr(ed, "tiers")
+        assert hasattr(ed, "subtiers")
+        assert hasattr(ed, "tier_types")
+
+        # Assert type and/or value
+        assert ed._modified is False
+        assert ed.file == Path(plhldr)
+        assert ed.tree.__eq__(ET.ElementTree(element=None))
+        assert ed.names == set()
+        assert ed.audio is None
+        assert ed.segmentations.segments.empty
+
     @pytest.mark.parametrize("invalid_file", ["", 123, ["file.eaf", "names.eaf"]])
     def test_invalid_constructor(self, invalid_file: Any) -> None:
         with pytest.raises((ValueError, TypeError)):
@@ -82,37 +107,36 @@ class TestElan_Data:
 
         assert ed.segmentations.segments.empty
 
-    # @pytest.mark.parametrize("invalid_file", ["", 123, ["file.eaf", "names.eaf"]])
-    # def test_invalid_from_file(self, invalid_file: Any) -> None:
-    #     with pytest.raises((ValueError, TypeError)):
-    #         ed = ELAN_Data.from_file(invalid_file)  # noqa: F841
+    @pytest.mark.parametrize("invalid_file", ["", 123, ["file.eaf", "names.eaf"]])
+    def test_invalid_from_file(self, invalid_file: Any) -> None:
+        with pytest.raises((ValueError, TypeError)):
+            ed = ELAN_Data.from_file(file=invalid_file)  # noqa: F841
 
-    # @pytest.mark.parametrize("plhldr", [lazy_fixture("placeholder"), lazy_fixture("placeholder_str")])
-    # @pytest.mark.parametrize("aud", [lazy_fixture("audio"), lazy_fixture("audio_str"), None])
-    # def test_from_dataframe_default_params(self, tier_data: pd.DataFrame, plhldr: Union[str, Path],
-    #                                        aud: Optional[Union[str, Path]], audio: Path,
-    #                                        tree: ET.ElementTree, tier_names: list[str]) -> None:
+    @pytest.mark.parametrize("plhldr", [lazy_fixture("placeholder"), lazy_fixture("placeholder_str")])
+    @pytest.mark.parametrize("aud", [lazy_fixture("audio"), lazy_fixture("audio_str"), None])
+    def test_from_dataframe_default_params(self, tier_data: pd.DataFrame, plhldr: Union[str, Path],
+                                           aud: Optional[Union[str, Path]], audio: Path,
+                                           tree: ET.ElementTree, tier_names: list[str]) -> None:
 
-    #     ed = ELAN_Data.from_dataframe(df=tier_data, file=plhldr, audio=aud)
+        ed = ELAN_Data.from_dataframe(df=tier_data, file=plhldr, audio=aud)
 
-    #     # Assert type and/or value
-    #     assert ed._modified is False
-    #     assert ed.file == Path(plhldr)
-    #     assert ed.tree.__eq__(tree)
-    #     assert ed.names == set(tier_names)
+        # Assert type and/or value
+        assert ed._modified is False
+        assert ed.file == Path(plhldr)
+        assert ed.tree.__eq__(tree)
+        assert ed.names == set(tier_names)
 
-    #     if aud:
-    #         assert ed.audio == audio.absolute()
-    #     else:
-    #         assert aud is None
+        if aud:
+            assert ed.audio.absolute() == audio.absolute()
+        else:
+            assert aud is None
 
-    #     assert ed.segmentations.segments.columns.to_list() == tier_data.columns.to_list()
-    #     assert ed.segmentations.segments.empty
+        assert set(ed.segmentations.segments.columns) == set(tier_data.columns)
 
-    # @pytest.mark.parametrize("invalid_df", ["", 123, ["file.eaf", "names.eaf"]])
-    # def test_invalid_from_dataframe(self, invalid_df: Any, placeholder: Path, audio: Path) -> None:
-    #     with pytest.raises(TypeError):
-    #         ed = ELAN_Data.from_dataframe(df=invalid_df, file=placeholder, audio=audio)  # noqa: F841
+    @pytest.mark.parametrize("invalid_df", ["", 123, ["file.eaf", "names.eaf"]])
+    def test_invalid_from_dataframe(self, invalid_df: Any, placeholder: Path, audio: Path) -> None:
+        with pytest.raises(TypeError):
+            ed = ELAN_Data.from_dataframe(df=invalid_df, file=placeholder, audio=audio)  # noqa: F841
 
     # @pytest.mark.parametrize("plhldr", [lazy_fixture("placeholder"), lazy_fixture("placeholder_str")])
     # @pytest.mark.parametrize("aud", [lazy_fixture("audio"), lazy_fixture("audio_str"), None])

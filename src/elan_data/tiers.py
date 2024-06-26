@@ -567,12 +567,16 @@ class Segmentations:
         if int(start) < 0 or int(end) <= int(start):
             raise ValueError("Start time is less than 0 or greater than the end time")
 
+        annot_id = f"a{self._ID}"
+        durration = int(end) - int(start)
+
         # I need to manually cast them to the correct type because
         # Python's "strict typing" is a fake friend...
         start, end = str(int(start)), str(int(end))
 
         # Insert it into the DataFrame
-        self.segments = pd.concat([self.segments, pd.DataFrame([tier, start, end, annotation, f"a{self._ID}"], columns=self.segments.columns)],
+        row = pd.DataFrame([[tier, start, end, annotation, annot_id, durration]], columns=self.segments.columns)
+        self.segments = pd.concat([self.segments, row],
                                   ignore_index=True)
 
         # Update ID

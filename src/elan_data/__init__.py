@@ -72,10 +72,12 @@ class ELAN_Data:
     subtiers: set[Subtier]
     names: set[str]  # All tier names
     segmentations: Segmentations
+    _modified: bool
 
 # ===================== INITIALIZATION METHODS =====================
 
-    def __init__(self, file: Union[str, Path]):
+    # TODO: Maybe separate the init and minimum intial file process
+    def __init__(self, file: Union[str, Path], minimum: bool = True):
         '''
         Default constructor for an ELAN_Data object.
 
@@ -85,11 +87,19 @@ class ELAN_Data:
         file : `str` or `pathlib.Path`
             Path of file and filename to be created; use `ELAN_Data.from_file` to parse an existing `.eaf` file.
 
+        minimum: `bool`
+            Have the minimum needed for a parseable `.eaf` file for ELAN. Defaults to `True`
+
         Raises
         ---
 
         - `ValueError`: If no file was given (either `None` or an empty string).
         - `TypeError`: If an invalid file type was given.
+
+        Notes
+        ---
+
+        - Setting `minimum = False` will only initialize the instance's attributes
         '''
 
         if isinstance(file, str):
@@ -101,10 +111,18 @@ class ELAN_Data:
 
         self.file = file
 
-        # Parse the XML
-        self.tree = ET.ElementTree(ET.fromstring(MINIMUM_ELAN.strip()))
+        if minimum:
 
-        self.tiers, self.subtiers, self.tier_types, self.names = self._extract_tiers(tree=self.tree)  # This is getting called twice if from_file is used :(
+            # Parse the XML
+            self.tree = ET.ElementTree(ET.fromstring(MINIMUM_ELAN.strip()))
+            self.tiers, self.subtiers, self.tier_types, self.names = self._extract_tiers(tree=self.tree)  # This is getting called twice if from_file is used :(
+
+        else:
+
+            self.tree = ET.ElementTree()
+
+            self.tiers, self.subtiers = set(), set()
+            self.tier_types, self.names = set(), set()
 
         # Audio file path
         self.audio: Optional[Path] = None
@@ -193,20 +211,28 @@ class ELAN_Data:
         ---
 
         - Only supports tiers (no subtiers) with the `default-lt` linguistic reference type
+        - `ANNOTATION_ID` attribute is not guaranteed to be the same as in the original file
         '''
 
         if not isinstance(df, pd.DataFrame):
             raise TypeError("DataFrame not given")
 
-        ed_obj = cls(file)
+        ed_obj = cls(file, minimum=False)
 
-        ed_obj.add_audio(audio)
+        if audio is not None:
+            ed_obj.audio = Path(audio)
 
         # Add all the tiers
         tier_names: set[str] = set()
+        segments = Segmentations()
+
         for row in df.itertuples(index=False):
-            tier_names.add(row.TIER_ID)
-            ed_obj.add_segment(row.TIER_ID, row.START, row.STOP, row.TEXT, init_df=False)
+
+            tier_names.add(row.TIER)
+            segments.add_segment(tier=row.TIER, start=row.START,
+                                 end=row.END, annotation=row.TEXT)
+
+        ed_obj.segmentations = segments
 
         ed_obj.tiers.update([Tier(name=name) for name in tier_names])
         ed_obj.names = tier_names
@@ -216,53 +242,51 @@ class ELAN_Data:
 
         return ed_obj
 
+    # TODO: Unsure if I should even keep this method as the default init might suffice
     # TODO: ADD KWARGS TO FUNCTIONS THAT NEED IT TO CUSTOMIZE TIERS; ALSO ADD SUBTIERS
-    @classmethod
-    def create_eaf(cls, file: Union[str, Path], audio: Optional[Union[str, Path]],
-                   tiers: list[str], remove_default: bool = False) -> ELAN_Data:
-        '''
-        Creates an ELAN_Data object to work with via Python.
+    # @classmethod
+    # def create_eaf(cls, file: Union[str, Path], audio: Optional[Union[str, Path]],
+    #                tiers: list[str], remove_default: bool = False) -> ELAN_Data:
+    #     '''
+    #     Creates an ELAN_Data object to work with via Python.
 
-        Parameters
-        ---
+    #     Parameters
+    #     ---
 
-        file : `str` or `pathlib.Path`
-            What will be created when the `ELAN_Data` instance is saved.
+    #     file : `str` or `pathlib.Path`
+    #         What will be created when the `ELAN_Data` instance is saved.
 
-        audio : `str` or `pathlib.Path`
-            File path to the associated audio file.
+    #     audio : `str` or `pathlib.Path`
+    #         File path to the associated audio file.
 
-        tiers : `list[str]`
-            List of strings containing all
+    #     tiers : `list[str]`
+    #         List of strings containing all
 
-        remove_default : `bool`
-            No default tier upon creation; defaults to False.
+    #     remove_default : `bool`
+    #         No default tier upon creation; defaults to False.
 
-        Returns
-        ---
+    #     Returns
+    #     ---
 
-        - `ELAN_Data` instance.
+    #     - `ELAN_Data` instance.
 
-        Raises
-        ---
+    #     Raises
+    #     ---
 
-        - `ValueError`: From `ELAN_Data.__init__()` method.
-        '''
+    #     - `ValueError`: From `ELAN_Data.__init__()` method.
+    #     '''
 
-        ed_obj = cls(file)
+    #     ed_obj = cls(file, minimum=False)
 
-        if remove_default:
-            ed_obj.remove_tiers(['default'])
+    #     if tiers:
+    #         ed_obj.add_tiers(tiers, False)
 
-        if tiers:
-            ed_obj.add_tiers(tiers, False)
+    #     if audio:
+    #         ed_obj.add_audio(audio)
 
-        if audio:
-            ed_obj.add_audio(audio)
+    #     ed_obj._modified = False
 
-        ed_obj._modified = False
-
-        return ed_obj
+    #     return ed_obj
 
 # ===================== PRIVATE METHODS =====================
 
