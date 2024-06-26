@@ -242,51 +242,59 @@ class ELAN_Data:
 
         return ed_obj
 
-    # TODO: Unsure if I should even keep this method as the default init might suffice
     # TODO: ADD KWARGS TO FUNCTIONS THAT NEED IT TO CUSTOMIZE TIERS; ALSO ADD SUBTIERS
-    # @classmethod
-    # def create_eaf(cls, file: Union[str, Path], audio: Optional[Union[str, Path]],
-    #                tiers: list[str], remove_default: bool = False) -> ELAN_Data:
-    #     '''
-    #     Creates an ELAN_Data object to work with via Python.
+    @classmethod
+    def create_eaf(cls, file: Union[str, Path], audio: Optional[Union[str, Path]],
+                   tiers: list[str], remove_default: bool = False) -> ELAN_Data:
+        '''
+        Creates an ELAN_Data object to work with via Python.
 
-    #     Parameters
-    #     ---
+        Parameters
+        ---
 
-    #     file : `str` or `pathlib.Path`
-    #         What will be created when the `ELAN_Data` instance is saved.
+        file : `str` or `pathlib.Path`
+            What will be created when the `ELAN_Data` instance is saved.
 
-    #     audio : `str` or `pathlib.Path`
-    #         File path to the associated audio file.
+        audio : `str` or `pathlib.Path`
+            File path to the associated audio file.
 
-    #     tiers : `list[str]`
-    #         List of strings containing all
+        tiers : `list[str]`
+            List of strings containing all tiers.
 
-    #     remove_default : `bool`
-    #         No default tier upon creation; defaults to False.
+        remove_default : `bool`
+            No default tier upon creation; defaults to False.
 
-    #     Returns
-    #     ---
+        Returns
+        ---
 
-    #     - `ELAN_Data` instance.
+        - `ELAN_Data` instance.
 
-    #     Raises
-    #     ---
+        Raises
+        ---
 
-    #     - `ValueError`: From `ELAN_Data.__init__()` method.
-    #     '''
+        - `ValueError`: From `ELAN_Data.__init__()` method.
 
-    #     ed_obj = cls(file, minimum=False)
 
-    #     if tiers:
-    #         ed_obj.add_tiers(tiers, False)
+        Notes
+        ---
 
-    #     if audio:
-    #         ed_obj.add_audio(audio)
+        - Tiers are all of the standard `default-lt` tier type
+        - Currently, there is no way to add subtiers through this method
+        '''
 
-    #     ed_obj._modified = False
+        ed_obj = cls(file, minimum=False) if remove_default else cls(file)
 
-    #     return ed_obj
+        if tiers:
+
+            for tier in tiers:
+
+                ed_obj.names.add(tier)
+                ed_obj.tiers.add(Tier(name=tier, tier_type=TierType()))
+
+        if audio:
+            ed_obj.audio = Path(audio)
+
+        return ed_obj
 
 # ===================== PRIVATE METHODS =====================
 
