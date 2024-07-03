@@ -193,51 +193,47 @@ class TestElan_Data:
 
     # ===================== TEST DUNDER METHODS =====================
 
-#     def test_repr(self, setup_file: ELAN_Data) -> None:
+    def test_repr(self, setup_file: ELAN_Data) -> None:
 
-#         test_repr = repr(setup_file)
-#         assert isinstance(test_repr, str)
+        test_repr = repr(setup_file)
+        assert isinstance(test_repr, str)
 
-#     def test_str(self, setup_file: ELAN_Data) -> None:
+    def test_str(self, setup_file: ELAN_Data) -> None:
 
-#         test_str = str(setup_file)
+        test_str = str(setup_file)
 
-#         answer = textwrap.dedent(f'''\
-#                  name: {setup_file.file.name}
-#                  located at: {setup_file.file.absolute()}
-#                  tiers: {", ".join(setup_file._tier_names)}
-#                  associated audio file: {"None" if not setup_file.audio else setup_file.audio.name}
-#                  associated audio location: {"None" if not setup_file.audio else setup_file.audio.absolute()}
-#                  dataframe init: {str(setup_file._init_data)}
-#                  modified: {str(setup_file._modified)}
-#                  ''')  # noqa: E122
+        answer = textwrap.dedent(f'''\
+                 name: {setup_file.file.name}
+                 located at: {setup_file.file.absolute()}
+                 tiers: {", ".join(setup_file.names)}
+                 associated audio file: {"None" if not setup_file.audio else setup_file.audio.name}
+                 associated audio location: {"None" if not setup_file.audio else setup_file.audio.absolute()}
+                 modified: {str(setup_file._modified)}
+                 ''')  # noqa: E122
 
-#         assert isinstance(test_str, str)
-#         assert test_str == answer
+        assert isinstance(test_str, str)
+        assert test_str == answer
 
-#     def test_len(self, setup_file: ELAN_Data, tier_data: pd.DataFrame) -> None:
+    # TODO: Might need to fix?
+    def test_len(self, setup_file: ELAN_Data, tier_data: pd.DataFrame) -> None:
 
-#         assert len(setup_file) == len(pd.DataFrame())
+        assert len(setup_file) == len(pd.DataFrame())
 
-#         setup_file.init_dataframe()
+    def test_contains(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
 
-#         assert len(setup_file) == len(tier_data)
+        for tier in tier_names:
+            assert tier in setup_file
 
-#     def test_contains(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
+        fake = ["boble", "boo", "test", "dfault"]
 
-#         for tier in tier_names:
-#             assert tier in setup_file
+        for tier in fake:
+            assert tier not in setup_file
 
-#         fake = ["boble", "boo", "test", "dfault"]
+    def test_iter(self, setup_file: ELAN_Data, tier_data: pd.DataFrame) -> None:
 
-#         for tier in fake:
-#             assert tier not in setup_file
-
-#     def test_iter(self, setup_file: ELAN_Data, tier_data: pd.DataFrame) -> None:
-
-#         for row_eaf, row_key in zip(setup_file, tier_data.itertuples()):
-#             assert type(row_eaf) == type(row_key)
-#             assert list(row_eaf._fields) == list(row_key._fields)
+        for row_eaf, row_key in zip(setup_file, tier_data.itertuples()):
+            assert type(row_eaf) == type(row_key)
+            assert list(row_eaf._fields) == list(row_key._fields)
 
 #     @pytest.mark.parametrize("ed1,ed2", [(lazy_fixture("setup_file"), lazy_fixture("setup_file")), (lazy_fixture("setup_new"), lazy_fixture("setup_new"))])
 #     def test_equals_true(self, ed1: ELAN_Data, ed2: ELAN_Data) -> None:

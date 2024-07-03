@@ -387,6 +387,7 @@ class ELAN_Data:
         {type(self).__name__}({self.tree!r}, {self.tiers!r}, {self.subtiers!r}, {self.names!r}, {self.tier_types!r}, {self.file!r}, {self.segmentations!r}, {self.audio!r}, {self._modified!r})
         ''')  # noqa: E122
 
+    # TODO: Should the DataFrame be included again?
     def __str__(self) -> str:
         return \
         textwrap.dedent(f'''\
