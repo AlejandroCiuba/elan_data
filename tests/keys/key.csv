@@ -2,7 +2,6 @@ TIER,START,END,TEXT,ID,DURATION
 creator,829,1329,Hello .,a1,500
 creator,2263,4224,This is a test recording .,a2,1961
 creator,4379,6193,for the ELAN Data Object .,a3,1814
-default,3000,6000,This is for a test,a4,3000
 creator,6406,6950,,a5,544
 test_2,2130,4330,This is a test recording,a6,2200
 THE FINAL TIER,340,7050,This segment spans over everything - Extraneous text and symbols too! (!@*()#$UV#)*ÑÑÑñññóÓö^**++]}),a7,6710

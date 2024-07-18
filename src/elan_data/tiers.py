@@ -384,6 +384,7 @@ class Segmentations:
 
             else:
                 raise TypeError(f"data cannot be of type {type(data)}")
+
             # Reinforce column types
             self._reinforce()
 
@@ -409,7 +410,8 @@ class Segmentations:
                 'START': [],
                 'END':   [],
                 'TEXT':  [],
-                'ID':    [], }
+                'ID':    [],
+                'DURATION': [], }
 
         with open(file, 'r', encoding=_ELAN_ENCODING) as src:
             tree = ET.parse(src)
@@ -436,7 +438,7 @@ class Segmentations:
             data['END'].extend(ends)
 
             # Calculate durations
-            data['DURATION'].extend([int(start - end) for start, end in zip(starts, ends)])
+            data['DURATION'].extend([int(end - start) for start, end in zip(starts, ends)])
 
             # Get segmentation text values
             texts = []

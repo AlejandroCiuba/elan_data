@@ -142,9 +142,6 @@ class ELAN_Data:
         file : `str` or `pathlib.Path`
             Filepath to the `.eaf` file.
 
-        init_df : `bool`
-            Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `False`.
-
         Returns
         ---
 
@@ -165,6 +162,9 @@ class ELAN_Data:
         # Extract all tier names
         ed_obj.tiers, ed_obj.subtiers, ed_obj.tier_types, ed_obj.names = ed_obj._extract_tiers(tree=ed_obj.tree)
 
+        # Extract segmentations
+        ed_obj.segmentations = Segmentations.from_file(file=file)
+
         # Separate the audio loading process, assumes local storage
         descriptor = ed_obj.tree.find(".//*[@MIME_TYPE]")
 
@@ -178,7 +178,7 @@ class ELAN_Data:
         return ed_obj
 
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path], audio: Optional[Union[str, Path]] = None, init_df: bool = False) -> ELAN_Data:
+    def from_dataframe(cls, df: pd.DataFrame, file: Union[str, Path], audio: Optional[Union[str, Path]] = None) -> ELAN_Data:
         '''
         Initialize an ELAN_Data object based on a dataframe structured like a tiers dataframe (`ELAN_Data.tiers_data`).
 
@@ -193,9 +193,6 @@ class ELAN_Data:
 
         audio : `str` or `pathlib.Path`
             Audio associated with this `.eaf` file.
-
-        init_df : `bool` DEPRECATED; TIHS METHOD WILL ALWAYS INITIALIZE THE DATAFRAME UNTIL FURTHER NOTICE
-            Initialize a `pandas.DataFrame` containing information related to this file. Defaults to `False`.
 
         Returns
         ---
@@ -451,7 +448,7 @@ class ELAN_Data:
         '''  # noqa: W605
 
         row = self.segmentations.get_segment(id=id, deep=True, named_tuple=True)
-        return row.TEXT if row else row
+        return row.TEXT.item() if row is not None else None
 
 #     def overlaps(self, seg_id: Optional[str] = None, tiers: Optional[Iterable[str]] = None, suprasegments: bool = True) -> pd.DataFrame:
 #         '''

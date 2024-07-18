@@ -105,8 +105,6 @@ class TestElan_Data:
         else:
             assert ed.audio is None
 
-        assert ed.segmentations.segments.empty
-
     @pytest.mark.parametrize("invalid_file", ["", 123, ["file.eaf", "names.eaf"]])
     def test_invalid_from_file(self, invalid_file: Any) -> None:
         with pytest.raises((ValueError, TypeError)):
@@ -119,6 +117,9 @@ class TestElan_Data:
                                            tree: ET.ElementTree, tier_names: list[str]) -> None:
 
         ed = ELAN_Data.from_dataframe(df=tier_data, file=plhldr, audio=aud)
+
+        # No way to get a tier with no data in a DataFrame
+        tier_names = tier_names[1:]
 
         # Assert type and/or value
         assert ed._modified is False
@@ -216,8 +217,7 @@ class TestElan_Data:
 
     # TODO: Might need to fix?
     def test_len(self, setup_file: ELAN_Data, tier_data: pd.DataFrame) -> None:
-
-        assert len(setup_file) == len(pd.DataFrame())
+        assert len(setup_file) == len(tier_data)
 
     def test_contains(self, setup_file: ELAN_Data, tier_names: list[str]) -> None:
 
@@ -232,8 +232,7 @@ class TestElan_Data:
     def test_iter(self, setup_file: ELAN_Data, tier_data: pd.DataFrame) -> None:
 
         for row_eaf, row_key in zip(setup_file, tier_data.itertuples()):
-            assert type(row_eaf) == type(row_key)
-            assert list(row_eaf._fields) == list(row_key._fields)
+            assert row_key == row_eaf
 
     # @pytest.mark.parametrize("ed1,ed2", [(lazy_fixture("setup_file"), lazy_fixture("setup_file")), (lazy_fixture("setup_new"), lazy_fixture("setup_new"))])
     # def test_equals_true(self, ed1: ELAN_Data, ed2: ELAN_Data) -> None:
@@ -265,13 +264,13 @@ class TestElan_Data:
 
 #     # ===================== TEST ACCESSORS =====================
 
-#     # get_segment(self, seg_id: str = "a1") -> Optional[str]
+    # get_segment(self, seg_id: str = "a1") -> Optional[str]
 
-#     def test_get_segment(self, setup_file: ELAN_Data, tier_data: pd.DataFrame) -> None:
+    def test_get_segment(self, setup_file: ELAN_Data, tier_data: pd.DataFrame) -> None:
+        assert setup_file.get_segment("a1") == tier_data.loc[tier_data.ID == "a1", "TEXT"][0]
 
-#         setup_file.init_dataframe()
-
-#         assert setup_file.get_segment("a1") == tier_data.loc[tier_data.SEGMENT_ID == "a1", "TEXT"][0]
+    def test_get_segment_not_found(self, setup_file: ELAN_Data) -> None:
+        assert setup_file.get_segment("a100") is None
 
 #     # overlaps(self, seg_id: Optional[str], tiers: Optional[Iterable[str]], suprasegments: bool = True) -> pd.DataFrame
 
