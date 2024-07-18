@@ -235,47 +235,33 @@ class TestElan_Data:
             assert type(row_eaf) == type(row_key)
             assert list(row_eaf._fields) == list(row_key._fields)
 
-#     @pytest.mark.parametrize("ed1,ed2", [(lazy_fixture("setup_file"), lazy_fixture("setup_file")), (lazy_fixture("setup_new"), lazy_fixture("setup_new"))])
-#     def test_equals_true(self, ed1: ELAN_Data, ed2: ELAN_Data) -> None:
-#         assert ed1 == ed2
+    # @pytest.mark.parametrize("ed1,ed2", [(lazy_fixture("setup_file"), lazy_fixture("setup_file")), (lazy_fixture("setup_new"), lazy_fixture("setup_new"))])
+    # def test_equals_true(self, ed1: ELAN_Data, ed2: ELAN_Data) -> None:
+    #     assert ed1 == ed2
 
-#     @pytest.mark.parametrize("ed1,ed2", [(lazy_fixture("setup_file"), lazy_fixture("setup_new")), (lazy_fixture("setup_new"), ELAN_Data("test.eaf"))])
-#     def test_equals_false(self, ed1: ELAN_Data, ed2: ELAN_Data) -> None:
-#         assert ed1 != ed2
+    # @pytest.mark.parametrize("ed1,ed2", [(lazy_fixture("setup_file"), lazy_fixture("setup_new")), (lazy_fixture("setup_new"), ELAN_Data("test.eaf"))])
+    # def test_equals_false(self, ed1: ELAN_Data, ed2: ELAN_Data) -> None:
+    #     assert ed1 != ed2
 
-#     def test_equals_unimplemented(self, setup_file: ELAN_Data) -> None:
-#         assert setup_file.__eq__(None)
+    # def test_equals_unimplemented(self, setup_file: ELAN_Data) -> None:
+    #     assert setup_file.__eq__(None)
 
-#     # ===================== TEST PROPERTIES =====================
+    # ===================== TEST PROPERTIES =====================
 
-#     def test_name(self, setup_file: ELAN_Data) -> None:
-#         assert setup_file.name == setup_file.file.name
+    def test_filename(self, setup_file: ELAN_Data, eaf: Path) -> None:
+        assert setup_file.filename == eaf.name
 
-#     def test_tier_names(self, setup_file: ELAN_Data) -> None:
-#         assert setup_file.tier_names == setup_file._tier_names
+    # TODO: Figure out what to do with the modified attribute
+    # def test_modified(self, setup_file: ELAN_Data) -> None:
 
-#     def test_df_status(self, setup_file: ELAN_Data) -> None:
+    #     assert setup_file.modified is False
+    #     assert setup_file.modified == setup_file._modified
 
-#         assert setup_file.df_status is False
-#         assert setup_file.df_status == setup_file._init_data
+    #     # Init DataFrame, modifying the object since creation
+    #     setup_file.df_status = True
 
-#         # Should automatically (re)init setup_file.tier_data
-#         setup_file.df_status = True
-
-#         assert setup_file.tier_data.empty is False
-#         assert setup_file.df_status is True
-#         assert setup_file.df_status == setup_file._init_data
-
-#     def test_modified(self, setup_file: ELAN_Data) -> None:
-
-#         assert setup_file.modified is False
-#         assert setup_file.modified == setup_file._modified
-
-#         # Init DataFrame, modifying the object since creation
-#         setup_file.df_status = True
-
-#         assert setup_file.modified is True
-#         assert setup_file.modified == setup_file._modified
+    #     assert setup_file.modified is True
+    #     assert setup_file.modified == setup_file._modified
 
 #     # ===================== TEST ACCESSORS =====================
 

@@ -409,15 +409,15 @@ class ELAN_Data:
         return self.segmentations.segments.itertuples()
 
     # TODO: Not a perfect equals -- FIX THIS!!!
-    @typing.no_type_check
-    def __eq__(self, other: object) -> bool:
+    # @typing.no_type_check
+    # def __eq__(self, other: object) -> bool:
 
-        if type(self).__name__ != type(other).__name__:
-            return NotImplemented
+    #     if type(self).__name__ != type(other).__name__:
+    #         return NotImplemented
 
-        return self.file == other.file and self.audio == other.audio \
-            and self.names == other.names and self.segmentations.segments.equals(other.segmentations.segments) \
-            and self._modified == other.modified  # Trees is a redundant check and not guaranteed
+    #     return self.file == other.file and self.audio == other.audio \
+    #         and self.names == other.names and self.segmentations.segments.equals(other.segmentations.segments) \
+    #         and self._modified == other.modified  # Trees is a redundant check and not guaranteed
 
 # ===================== FIELDS =====================
 
