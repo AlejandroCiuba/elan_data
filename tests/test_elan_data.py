@@ -32,15 +32,13 @@ class TestElan_Data:
     # ===================== TEST CONSTRUCTORS =====================
 
     @pytest.mark.parametrize("plhldr", [lazy_fixture("placeholder"), lazy_fixture("placeholder_str")])
-    def test_constructor_default_params(self, plhldr: Union[str, Path], minimum_elan: ET.ElementTree,
-                                        default_tier_list: list[str], default_tier_data: pd.DataFrame) -> None:
+    def test_constructor_default_params(self, plhldr: Union[str, Path], default_tier_list: list[str]) -> None:
 
         ed = ELAN_Data(file=plhldr)
 
         # Assert existence of necessary attributes
         assert hasattr(ed, "_modified")
         assert hasattr(ed, "file")
-        assert hasattr(ed, "tree")
         assert hasattr(ed, "names")
         assert hasattr(ed, "audio")
         assert hasattr(ed, "segmentations")
@@ -51,21 +49,18 @@ class TestElan_Data:
         # Assert type and/or value
         assert ed._modified is False
         assert ed.file == Path(plhldr)
-        assert ed.tree.__eq__(minimum_elan)
         assert ed.names == set(default_tier_list)
         assert ed.audio is None
         assert ed.segmentations.segments.empty
 
     @pytest.mark.parametrize("plhldr", [lazy_fixture("placeholder"), lazy_fixture("placeholder_str")])
-    def test_constructor_no_minimum(self, plhldr: Union[str, Path], minimum_elan: ET.ElementTree,
-                                    default_tier_list: list[str], default_tier_data: pd.DataFrame) -> None:
+    def test_constructor_no_minimum(self, plhldr: Union[str, Path]) -> None:
 
         ed = ELAN_Data(file=plhldr, minimum=False)
 
         # Assert existence of necessary attributes
         assert hasattr(ed, "_modified")
         assert hasattr(ed, "file")
-        assert hasattr(ed, "tree")
         assert hasattr(ed, "names")
         assert hasattr(ed, "audio")
         assert hasattr(ed, "segmentations")
@@ -76,7 +71,6 @@ class TestElan_Data:
         # Assert type and/or value
         assert ed._modified is False
         assert ed.file == Path(plhldr)
-        assert ed.tree.__eq__(ET.ElementTree(element=None))
         assert ed.names == set()
         assert ed.audio is None
         assert ed.segmentations.segments.empty
@@ -89,15 +83,13 @@ class TestElan_Data:
     @pytest.mark.parametrize("file", [lazy_fixture("eaf"), lazy_fixture("eaf_str"),
                                       lazy_fixture("eaf_no_audio"), lazy_fixture("eaf_no_audio_str")])
     def test_from_file_default_params(self, file: Union[str, Path], audio: Path,
-                                      tier_names: list[str], tier_data: pd.DataFrame,
-                                      tree: ET.ElementTree) -> None:
+                                      tier_names: list[str]) -> None:
 
         ed = ELAN_Data.from_file(file=file)
 
         # Assert type and/or value
         assert ed._modified is False
         assert ed.file == Path(file)
-        assert ed.tree.__eq__(tree)
         assert ed.names == set(tier_names)
 
         if "-no-audio" not in str(file):
@@ -114,7 +106,7 @@ class TestElan_Data:
     @pytest.mark.parametrize("aud", [lazy_fixture("audio"), lazy_fixture("audio_str"), None])
     def test_from_dataframe_default_params(self, tier_data: pd.DataFrame, plhldr: Union[str, Path],
                                            aud: Optional[Union[str, Path]], audio: Path,
-                                           tree: ET.ElementTree, tier_names: list[str]) -> None:
+                                           tier_names: list[str]) -> None:
 
         ed = ELAN_Data.from_dataframe(df=tier_data, file=plhldr, audio=aud)
 
@@ -124,7 +116,6 @@ class TestElan_Data:
         # Assert type and/or value
         assert ed._modified is False
         assert ed.file == Path(plhldr)
-        assert ed.tree.__eq__(tree)
         assert ed.names == set(tier_names)
 
         if aud:
@@ -142,15 +133,13 @@ class TestElan_Data:
     @pytest.mark.parametrize("plhldr", [lazy_fixture("placeholder"), lazy_fixture("placeholder_str")])
     @pytest.mark.parametrize("aud", [lazy_fixture("audio"), lazy_fixture("audio_str"), None])
     def test_create_file_default_params(self, plhldr: Union[str, Path], aud: Optional[Union[str, Path]],
-                                        tier_names: list[str], tier_data: pd.DataFrame,
-                                        minimum_elan: ET.ElementTree, audio: Path) -> None:
+                                        tier_names: list[str], tier_data: pd.DataFrame, audio: Path) -> None:
 
         ed = ELAN_Data.create_eaf(file=plhldr, audio=aud, tiers=tier_names)
 
         # Assert type and/or value
         assert ed._modified is False
         assert ed.file == Path(plhldr)
-        assert ed.tree.__eq__(minimum_elan)
         assert ed.names == set(tier_names)
 
         if aud:
@@ -164,8 +153,7 @@ class TestElan_Data:
     @pytest.mark.parametrize("plhldr", [lazy_fixture("placeholder"), lazy_fixture("placeholder_str")])
     @pytest.mark.parametrize("aud", [lazy_fixture("audio"), lazy_fixture("audio_str"), None])
     def test_create_file_remove_default(self, plhldr: Union[str, Path], aud: Optional[Union[str, Path]],
-                                        tier_names: list[str], tier_data: pd.DataFrame,
-                                        minimum_elan: ET.ElementTree, audio: Path) -> None:
+                                        tier_names: list[str], tier_data: pd.DataFrame, audio: Path) -> None:
 
         if "default" in tier_names:
             tier_names = tier_names.copy()
@@ -176,7 +164,6 @@ class TestElan_Data:
         # Assert type and/or value
         assert ed._modified is False
         assert ed.file == Path(plhldr)
-        assert ed.tree.__eq__(minimum_elan)
         assert ed.names == set(tier_names)
 
         if aud:
@@ -194,6 +181,7 @@ class TestElan_Data:
 
     # ===================== TEST DUNDER METHODS =====================
 
+    # TODO: Not a complete test since the attributes are still not finalized
     def test_repr(self, setup_file: ELAN_Data) -> None:
 
         test_repr = repr(setup_file)

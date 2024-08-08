@@ -66,7 +66,7 @@ class ELAN_Data:
 
     file: Path
     audio: Optional[Path]
-    tree: ET.ElementTree
+    # tree: ET.ElementTree
     tiers: set[Tier]
     tier_types: set[TierType]
     subtiers: set[Subtier]
@@ -117,12 +117,12 @@ class ELAN_Data:
         if minimum:
 
             # Parse the XML
-            self.tree = ET.ElementTree(ET.fromstring(MINIMUM_ELAN.strip()))
-            self.tiers, self.subtiers, self.tier_types, self.names = self._extract_tiers(tree=self.tree)  # This is getting called twice if from_file is used :(
+            tree = ET.ElementTree(ET.fromstring(MINIMUM_ELAN.strip()))
+            self.tiers, self.subtiers, self.tier_types, self.names = self._extract_tiers(tree=tree)  # This is getting called twice if from_file is used :(
 
         else:
 
-            self.tree = ET.ElementTree()
+            # self.tree = ET.ElementTree()
 
             self.tiers, self.subtiers = set(), set()
             self.tier_types, self.names = set(), set()
@@ -160,16 +160,16 @@ class ELAN_Data:
 
         # Parse the XML
         with open(ed_obj.file, 'r', encoding=_ELAN_ENCODING) as src:
-            ed_obj.tree = ET.parse(src)
+            tree = ET.parse(src)
 
         # Extract all tier names
-        ed_obj.tiers, ed_obj.subtiers, ed_obj.tier_types, ed_obj.names = ed_obj._extract_tiers(tree=ed_obj.tree)
+        ed_obj.tiers, ed_obj.subtiers, ed_obj.tier_types, ed_obj.names = ed_obj._extract_tiers(tree=tree)
 
         # Extract segmentations
         ed_obj.segmentations = Segmentations.from_file(file=file)
 
         # Separate the audio loading process, assumes local storage
-        descriptor = ed_obj.tree.find(".//*[@MIME_TYPE]")
+        descriptor = tree.find(".//*[@MIME_TYPE]")
 
         if isinstance(descriptor, ET.Element):
             ed_obj.audio = Path(descriptor.attrib["MEDIA_URL"].replace("file:", ""))
@@ -384,7 +384,7 @@ class ELAN_Data:
     def __repr__(self) -> str:
         return \
         textwrap.dedent(f'''\
-        {type(self).__name__}({self.tree!r}, {self.tiers!r}, {self.subtiers!r}, {self.names!r}, {self.tier_types!r}, {self.file!r}, {self.segmentations!r}, {self.audio!r}, {self._modified!r})
+        {type(self).__name__}({self.tiers!r}, {self.subtiers!r}, {self.names!r}, {self.tier_types!r}, {self.file!r}, {self.segmentations!r}, {self.audio!r}, {self._modified!r})
         ''')  # noqa: E122
 
     # TODO: Should the DataFrame be included again?
@@ -758,25 +758,26 @@ class ELAN_Data:
         else:
             raise TypeError("audio is not a Path or a string")
 
-        a = ET.Element('MEDIA_DESCRIPTOR')
+        # TODO: Might be useful when writing to an XML
+        # a = ET.Element('MEDIA_DESCRIPTOR')
 
-        a.attrib["MEDIA_URL"] = self.audio.absolute().as_uri()
-        a.attrib["RELATIVE_MEDIA_URL"] = ""  # Remove completely, ELAN will figure it out
-        a.attrib["MIME_TYPE"] = "audio/x-wav"
+        # a.attrib["MEDIA_URL"] = self.audio.absolute().as_uri()
+        # a.attrib["RELATIVE_MEDIA_URL"] = ""  # Remove completely, ELAN will figure it out
+        # a.attrib["MIME_TYPE"] = "audio/x-wav"
 
-        parent = self.tree.find("./HEADER")
+        # parent = self.tree.find("./HEADER")
 
-        assert isinstance(parent, ET.Element)
+        # assert isinstance(parent, ET.Element)
 
-        old_audio = parent.find("./MEDIA_DESCRIPTOR")
+        # old_audio = parent.find("./MEDIA_DESCRIPTOR")
 
-        # Duplicate MEDIA_URL does not modify the object
-        if isinstance(old_audio, ET.Element):
-            if old_audio.attrib["MEDIA_URL"] == a.attrib["MEDIA_URL"]:
-                return
-            parent.remove(old_audio)
+        # # Duplicate MEDIA_URL does not modify the object
+        # if isinstance(old_audio, ET.Element):
+        #     if old_audio.attrib["MEDIA_URL"] == a.attrib["MEDIA_URL"]:
+        #         return
+        #     parent.remove(old_audio)
 
-        parent.insert(0, a)
+        # parent.insert(0, a)
 
         self._modified = True
 
