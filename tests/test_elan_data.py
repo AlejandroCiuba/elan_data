@@ -274,37 +274,37 @@ class TestElan_Data:
 
 #     # overlaps(self, seg_id: Optional[str], tiers: Optional[Iterable[str]], suprasegments: bool = True) -> pd.DataFrame
 
-#     def test_overlaps_tiers(self, setup_file: ELAN_Data) -> None:
+    def test_overlaps_tiers(self, setup_file: ELAN_Data) -> None:
 
-#         # We will get the segment in tier "creator;" it should only have 1 overlaps
-#         overlaps = setup_file.overlaps(seg_id="a6", tiers=["creator"])
+        # We will get the segment in tier "creator;" it should only have 1 overlaps
+        overlaps = setup_file.overlaps(seg_id="a6", tiers=["creator"])
 
-#         assert "a2" in overlaps.SEGMENT_ID.to_list()
-#         assert "a7" not in overlaps.SEGMENT_ID.to_list()
+        assert "a2" in overlaps.ID.to_list()
+        assert "a7" not in overlaps.ID.to_list()
 
-#     def test_overlaps_no_suprasegments(self, setup_file: ELAN_Data) -> None:
+    def test_overlaps_no_suprasegments(self, setup_file: ELAN_Data) -> None:
 
-#         overlaps = setup_file.overlaps(seg_id="a6", suprasegments=False)
+        overlaps = setup_file.overlaps(seg_id="a6", suprasegments=False)
 
-#         assert "a2" in overlaps.SEGMENT_ID.to_list()
-#         assert "a7" not in overlaps.SEGMENT_ID.to_list()
+        assert "a2" in overlaps.ID.to_list()
+        assert "a7" not in overlaps.ID.to_list()
 
-#     def test_overlaps_no_tiers(self, setup_file: ELAN_Data) -> None:
+    def test_overlaps_no_tiers(self, setup_file: ELAN_Data) -> None:
 
-#         # It should only have 2 overlaps both times; the same ones
-#         overlaps = setup_file.overlaps(seg_id="a6")
+        # It should only have 2 overlaps both times; the same ones
+        overlaps = setup_file.overlaps(seg_id="a6")
 
-#         assert "a2" in overlaps.SEGMENT_ID.to_list()
-#         assert "a7" in overlaps.SEGMENT_ID.to_list()
+        assert "a2" in overlaps.ID.to_list()
+        assert "a7" in overlaps.ID.to_list()
 
-#         overlaps = setup_file.overlaps(seg_id="a6", tiers=[])
+        overlaps = setup_file.overlaps(seg_id="a6", tiers=[])
 
-#         assert "a2" in overlaps.SEGMENT_ID.to_list()
-#         assert "a7" in overlaps.SEGMENT_ID.to_list()
+        assert "a2" in overlaps.ID.to_list()
+        assert "a7" in overlaps.ID.to_list()
 
-#     def test_invalid_overlaps(self, setup_file: ELAN_Data) -> None:
-#         with pytest.raises(ValueError):
-#             overlaps = setup_file.overlaps(seg_id=None)  # noqa: F841
+    def test_invalid_overlaps(self, setup_file: ELAN_Data) -> None:
+        with pytest.raises(ValueError):
+            overlaps = setup_file.overlaps(seg_id=None)  # noqa: F841
 
 #     # ===================== TEST MUTATORS =====================
 
